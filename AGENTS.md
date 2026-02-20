@@ -2,6 +2,10 @@
 
 A CLI tool that extracts keymaps from your Neovim configuration and generates importable keymap files for other editors.
 
+## Note to the Agent:
+
+This project is being done to add functionality while also being a learning experience for me. Please be hesitant to provide fixes, and instead provide guidance and suggestions. I want to be able to learn how to solve problems on my own, and I will ask for help when I need it. Please do not touch git or make any commits. I will handle all of that myself.
+
 ## How It Works
 
 1. **Extraction**: Uses `nvim --headless` to load your full config (plugins included) and calls `vim.api.nvim_get_keymap()` for each mode to extract all keymaps as JSON.
