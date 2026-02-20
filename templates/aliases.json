@@ -1,0 +1,19 @@
+{
+  "exit": "quit",
+  "close": "quit",
+  "write": "save",
+  "grep": "live_grep",
+  "help": "help_tags",
+  "definition": "lsp.buf.definition",
+  "declaration": "lsp.buf.declaration",
+  "implementation": "lsp.buf.implementation",
+  "references": "lsp.buf.references",
+  "rename": "lsp.buf.rename",
+  "hover": "lsp.buf.hover",
+  "format": "lsp.buf.format",
+  "comment": "comment_toggle",
+  "find_file": "find_files",
+  "oldfile": "oldfiles",
+  "buffer": "buffers",
+  "diagnostic": "diagnostics"
+}

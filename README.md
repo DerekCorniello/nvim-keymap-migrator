@@ -1,6 +1,6 @@
 # nvim-keymap-migrator
 
-A CLI tool that extracts keymaps from your Neovim configuration and generates importable keymap files for other editors.
+A CLI tool that extracts user-defined keymaps from your Neovim configuration and generates importable keymap files for other editors.
 
 ## Installation
 
@@ -37,20 +37,46 @@ nvim-keymap-migrator --help
 nvim-keymap-migrator --version
 ```
 
+## How It Works
+
+### 1. Extraction
+
+Uses `nvim --headless` to load your config and extract **only user-defined keymaps**:
+
+- Filters out built-in Neovim mappings
+- Filters out plugin mappings (outside your config directory)
+- Preserves buffer-local keymaps (LSP, etc.) with metadata
+
+### 2. Matching Pipeline
+
+Deterministic pipeline for mapping nvim actions to IDE commands:
+
+```
+desc/rhs → normalize → alias resolve → canonical key → IDE command
+```
+
+- **Normalize**: lowercase, spaces → underscores, strip punctuation
+- **Alias resolve**: Check aliases for known variations
+- **Canonical lookup**: Check mappings for IDE commands
+
+### 3. Generation
+
+Outputs keymap files in multiple formats.
+
 ## Output Formats
 
 ### `.vimrc` (Vim Emulator Plugins)
 
-For use with IdeaVim (IntelliJ) or VSCodeVim (VS Code). Generates standard Vimscript mapping commands:
+For use with IdeaVim (IntelliJ) or VSCodeVim (VS Code). Includes ALL keymaps - even unmapped ones.
 
 ```vim
-nnoremap <leader>ff :find_files<CR>
+nnoremap <silent> <leader>ff <cmd>lua require('telescope.builtin').find_files()<CR>
 vnoremap J :m '>+1<CR>gv=gv
 ```
 
 ### `keybindings.json` (VS Code Native)
 
-Native VS Code keybindings format:
+Native VS Code keybindings format. Only includes mapped keymaps.
 
 ```json
 [
@@ -63,55 +89,50 @@ Import: VS Code → Keyboard Shortcuts → Open JSON icon → paste contents
 
 ### `keymap.xml` (IntelliJ Native)
 
-Native IntelliJ keymap format:
+Native IntelliJ keymap format. Only includes mapped keymaps.
 
 ```xml
 <keymap version="1" name="nvim-import" parent="Default for XWin">
   <action id="GotoFile">
-    <keyboard-shortcut first-keystroke="ctrl p" />
+    <keyboard-shortcut first-keystroke="ctrl P" />
   </action>
 </keymap>
 ```
 
 Import: Settings → Keymap → Import → select file
 
-## How It Works
+## Lua Callback Handling
 
-1. **Extraction**: Spawns `nvim --headless` to load your config and calls `vim.api.nvim_get_keymap()` for all modes
-2. **Transformation**: Maps Neovim actions to editor-specific commands using built-in mappings
-3. **Generation**: Writes output files in your chosen format(s)
+Neovim keymaps bound to Lua functions are opaque to other editors. This tool:
 
-## Handling Lua Callbacks
+1. Uses the `desc` field to identify the action
+2. Matches against the mapping database
+3. Includes all in `.vimrc` (for vim emulator plugins)
+4. Skips unmapped in native formats with warning
 
-Neovim keymaps bound to Lua functions (`vim.keymap.set('n', '<leader>ff', function() ... end)`) are opaque to other editors. This tool handles them by:
-
-1. Using the `desc` field to identify the action
-2. Matching against the built-in mapping database
-3. Skipping unmappable callbacks in native formats (with warning)
-4. Including all callbacks in `.vimrc` format (for vim emulator plugins)
-
-**Tip**: Add `desc` fields to your Lua keymaps for better mapping accuracy:
+**Tip:** Add `desc` fields to your Lua keymaps:
 
 ```lua
-vim.keymap.set('n', '<leader>ff', function() require('telescope.builtin').find_files() end, { desc = 'find_files' })
+vim.keymap.set('n', '<leader>ff', function() 
+  require('telescope.builtin').find_files() 
+end, { desc = 'find_files' })
 ```
 
 ## Buffer-Local Keymaps
 
-Keymaps scoped to specific filetypes (LSP keymaps, etc.) are detected and you'll be prompted to include or exclude them during export.
+LSP keymaps (defined in `on_attach`) and other buffer-local keymaps are:
+
+- Preserved in extraction with `buffer_local: true` metadata
+- Listed separately in the summary output
+- Included in `.vimrc` output
 
 ## Custom Mappings
 
-Create a `.nvim-mappings.json` in your config directory to extend the built-in mappings:
+Extend the built-in mappings by editing:
+- `templates/default-mappings.json` - Canonical mappings
+- `templates/aliases.json` - Alias variations
 
-```json
-{
-  "my_custom_action": {
-    "vscode": "myExtension.customCommand",
-    "intellij": "MyCustomAction"
-  }
-}
-```
+Or create `.nvim-mappings.json` in your config directory.
 
 ## Supported Editors
 
