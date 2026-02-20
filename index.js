@@ -3,8 +3,9 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractKeymaps } from './src/extractor.js';
 
-// i find this... interesting, but it works, so... yeah
+// i find this style... interesting, but it works, so... yeah
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -30,7 +31,11 @@ switch (args[0]) {
 
     case undefined:
     case 'run':
-        // TODO: do the logic stuff
-        console.log('Running...');
+        try {
+            let keymaps = await extractKeymaps();
+            console.log('Extracted keymaps:', keymaps);
+        } catch (err) {
+            console.error('An error occurred:', err);
+        }
         break;
 }
