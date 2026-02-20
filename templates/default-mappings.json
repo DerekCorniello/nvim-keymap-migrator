@@ -1,0 +1,226 @@
+{
+  "find_files": {
+    "vscode": "workbench.action.quickOpen",
+    "intellij": "GotoFile"
+  },
+  "live_grep": {
+    "vscode": "workbench.action.findInFiles",
+    "intellij": "FindInPath"
+  },
+  "buffers": {
+    "vscode": "workbench.action.showAllEditors",
+    "intellij": "RecentFiles"
+  },
+  "grep_string": {
+    "vscode": "editor.action.search.selection.wildcard",
+    "intellij": "FindWordAtCaret"
+  },
+  "diagnostics": {
+    "vscode": "workbench.actions.view.problems",
+    "intellij": "ViewProblems"
+  },
+  "oldfiles": {
+    "vscode": "workbench.action.openRecent",
+    "intellij": "RecentFiles"
+  },
+  "resume": {
+    "vscode": "workbench.action.quickOpenNavigateNext",
+    "intellij": "SearchAgain"
+  },
+  "help_tags": {
+    "vscode": "workbench.action.openDocumentation",
+    "intellij": "HelpTopics"
+  },
+  "keymaps": {
+    "vscode": "workbench.action.openGlobalKeybindings",
+    "intellij": "KeymapReference"
+  },
+  "current_buffer_fuzzy_find": {
+    "vscode": "editor.actions.findWithArgs",
+    "intellij": "FindInFile"
+  },
+  "command_history": {
+    "vscode": "workbench.action.openRecent",
+    "intellij": "GotoAction"
+  },
+  "lsp.buf.definition": {
+    "vscode": "editor.action.revealDefinition",
+    "intellij": "GotoDeclaration"
+  },
+  "lsp.buf.references": {
+    "vscode": "editor.action.goToReferences",
+    "intellij": "FindUsages"
+  },
+  "lsp.buf.rename": {
+    "vscode": "editor.action.rename",
+    "intellij": "RenameElement"
+  },
+  "lsp.buf.code_action": {
+    "vscode": "editor.action.quickFix",
+    "intellij": "ShowIntentionActions"
+  },
+  "lsp.buf.hover": {
+    "vscode": "editor.action.showHover",
+    "intellij": "QuickImplementations"
+  },
+  "lsp.buf.format": {
+    "vscode": "editor.action.formatDocument",
+    "intellij": "ReformatCode"
+  },
+  "lsp.buf.implementation": {
+    "vscode": "editor.action.goToImplementation",
+    "intellij": "GotoImplementation"
+  },
+  "lsp.buf.declaration": {
+    "vscode": "editor.action.goToDeclaration",
+    "intellij": "GotoDeclaration"
+  },
+  "lsp.buf.signature_help": {
+    "vscode": "editor.action.triggerParameterHints",
+    "intellij": "ParameterInfo"
+  },
+  "lsp.buf.type_definition": {
+    "vscode": "editor.action.goToTypeDefinition",
+    "intellij": "GotoTypeDeclaration"
+  },
+  "lsp.buf.add_workspace_folder": {
+    "vscode": "workbench.action.addRootFolder",
+    "intellij": "AddNewProjectToWorkspace"
+  },
+  "lsp.buf.remove_workspace_folder": {
+    "vscode": "workbench.action.removeRootFolder",
+    "intellij": "RemoveProjectFromWorkspace"
+  },
+  "diagnostic.goto_next": {
+    "vscode": "editor.action.marker.next",
+    "intellij": "GotoNextError"
+  },
+  "diagnostic.goto_prev": {
+    "vscode": "editor.action.marker.prev",
+    "intellij": "GotoPreviousError"
+  },
+  "diagnostic.setloclist": {
+    "vscode": "workbench.actions.view.problems",
+    "intellij": "ViewProblems"
+  },
+  "todo-comments.jump_next": {
+    "vscode": "editor.action.marker.next",
+    "intellij": "GotoNextError"
+  },
+  "todo-comments.jump_prev": {
+    "vscode": "editor.action.marker.prev",
+    "intellij": "GotoPreviousError"
+  },
+  "save": {
+    "vscode": "workbench.action.files.save",
+    "intellij": "SaveDocument"
+  },
+  "quit": {
+    "vscode": "workbench.action.closeActiveEditor",
+    "intellij": "CloseContent"
+  },
+  "close_buffer": {
+    "vscode": "workbench.action.closeActiveEditor",
+    "intellij": "CloseContent"
+  },
+  "new_file": {
+    "vscode": "workbench.action.files.newUntitledFile",
+    "intellij": "NewFile"
+  },
+  "open_file": {
+    "vscode": "workbench.action.files.openFile",
+    "intellij": "OpenFile"
+  },
+  "split_horizontal": {
+    "vscode": "workbench.action.splitEditorDown",
+    "intellij": "SplitHorizontally"
+  },
+  "split_vertical": {
+    "vscode": "workbench.action.splitEditor",
+    "intellij": "SplitVertically"
+  },
+  "tab_next": {
+    "vscode": "workbench.action.nextEditor",
+    "intellij": "NextTab"
+  },
+  "tab_prev": {
+    "vscode": "workbench.action.previousEditor",
+    "intellij": "PreviousTab"
+  },
+  "tab_close": {
+    "vscode": "workbench.action.closeActiveEditor",
+    "intellij": "CloseContent"
+  },
+  "go_to_line": {
+    "vscode": "workbench.action.gotoLine",
+    "intellij": "GotoLine"
+  },
+  "search_in_file": {
+    "vscode": "actions.find",
+    "intellij": "Find"
+  },
+  "replace_in_file": {
+    "vscode": "editor.action.startFindReplaceAction",
+    "intellij": "Replace"
+  },
+  "comment_toggle": {
+    "vscode": "editor.action.commentLine",
+    "intellij": "CommentByLineComment"
+  },
+  "undo": {
+    "vscode": "undo",
+    "intellij": "$Undo"
+  },
+  "redo": {
+    "vscode": "redo",
+    "intellij": "$Redo"
+  },
+  "select_all": {
+    "vscode": "editor.action.selectAll",
+    "intellij": "$SelectAll"
+  },
+  "copy": {
+    "vscode": "editor.action.clipboardCopyAction",
+    "intellij": "$Copy"
+  },
+  "paste": {
+    "vscode": "editor.action.clipboardPasteAction",
+    "intellij": "$Paste"
+  },
+  "cut": {
+    "vscode": "editor.action.clipboardCutAction",
+    "intellij": "$Cut"
+  },
+  "delete_line": {
+    "vscode": "editor.action.deleteLines",
+    "intellij": "EditorDeleteLine"
+  },
+  "duplicate_line": {
+    "vscode": "editor.action.copyLinesDownAction",
+    "intellij": "DuplicateLines"
+  },
+  "move_line_up": {
+    "vscode": "editor.action.moveLinesUpAction",
+    "intellij": "MoveLineUp"
+  },
+  "move_line_down": {
+    "vscode": "editor.action.moveLinesDownAction",
+    "intellij": "MoveLineDown"
+  },
+  "toggle_terminal": {
+    "vscode": "workbench.action.terminal.toggleTerminal",
+    "intellij": "ActivateTerminalToolWindow"
+  },
+  "toggle_sidebar": {
+    "vscode": "workbench.action.toggleSidebarVisibility",
+    "intellij": "HideSideWindows"
+  },
+  "zoom_in": {
+    "vscode": "workbench.action.zoomIn",
+    "intellij": "IncreaseFontSize"
+  },
+  "zoom_out": {
+    "vscode": "workbench.action.zoomOut",
+    "intellij": "DecreaseFontSize"
+  }
+}

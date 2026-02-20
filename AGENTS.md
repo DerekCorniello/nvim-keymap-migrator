@@ -1,31 +1,99 @@
-# nvim-keymap-migrator overview
+# nvim-keymap-migrator
 
-nvim-keymap-migrator is a tool designed to help Neovim users migrate their keybindings to other editors. It parses your Neovim configuration files, extracts the keymaps, and generates a keymap file that can be used in other editors.
+A CLI tool that extracts keymaps from your Neovim configuration and generates importable keymap files for other editors.
 
-## Requirements
+## How It Works
 
-Telescope.nvim is required to use nvim-keymap-migrator, as it relies on Telescope's functionality to search and index the keymaps.
+1. **Extraction**: Uses `nvim --headless` to load your full config (plugins included) and calls `vim.api.nvim_get_keymap()` for each mode to extract all keymaps as JSON.
 
-The only setup done right now is to use Node.js to build this app in JavaScript.
+2. **Transformation**: Maps Neovim actions to equivalent editor commands using a configurable mapping file. Lua callbacks use their `desc` field for identification.
+
+3. **Generation**: Outputs keymap files in multiple formats:
+   - `.vimrc` - For Vim emulator plugins (IdeaVim, VSCodeVim)
+   - `keybindings.json` - For VS Code native keybindings
+   - `keymap.xml` - For IntelliJ native keymaps
+
+## Architecture
+
+```
+nvim-keymap-migrator/
+├── index.js              # CLI entry point, argument parsing
+├── src/
+│   ├── extractor.js      # Spawn headless nvim, parse keymaps
+│   ├── generators/
+│   │   ├── vimrc.js      # Generate .vimrc format
+│   │   ├── vscode.js     # Generate keybindings.json
+│   │   └── intellij.js   # Generate keymap.xml
+│   └── mappings.js       # Load/apply nvim→editor action mappings
+├── templates/
+│   └── default-mappings.json   # Built-in action mappings
+└── package.json
+```
+
+## Key Concepts
+
+### Keymap Data Structure
+
+Each extracted keymap has:
+- `lhs` - The key sequence (e.g., `<leader>ff`)
+- `rhs` - The action (command string or `<Lua function>`)
+- `mode` - Mode (n, i, v, x, o, c, t)
+- `desc` - Description (used to identify Lua callbacks)
+- `silent`, `noremap`, `buffer`, `nowait`, `expr` - Options
+
+### Lua Callback Handling
+
+Lua functions show as `<Lua function>` in `rhs`. We handle them by:
+1. Using the `desc` field to identify the action
+2. Matching against the mappings file
+3. If no match found, skip with warning (native) or include as-is (vimrc)
+
+### Buffer-Local Keymaps
+
+Keymaps with `buffer` set are buffer-local (often LSP-related). We prompt the user interactively to include/exclude them.
 
 ## Development Guidelines
 
-- Use minimal amount of dependencies.
-- Write clean and maintainable code.
-- Ensure that the tool is easy to use and understand for users of all levels.
-- Provide clear documentation and examples for users to get started quickly.
-- Always lint and format your code.
-- NEVER touch git.
+- Use minimal dependencies (prefer Node built-ins)
+- Write clean, maintainable JavaScript (ES modules)
+- Always lint and format code
+- NEVER touch git
+- Keep it simple and practical
 
-## Project Requirements
+## CLI Usage
 
-- Must be able to parse Neovim configurations that are both obvious and non-obvious, such as:
-    - Keymaps defined in Lua files.
-    - Keymaps defined in Vimscript files.
-    - Keymaps defined in plugin configurations.
-    - I believe this can be done via Telescope's functionality to search through the config files and extract the keymaps. There is a telescope keybind to search for keymaps, so we can leverage that to find all the keymaps in the config.
-- Must generate a keymap file that can be easily imported into other editors.
-    - Intellij
-    - Visual Studio Code
-    - To start off with, lets just have these two, other editors can be added later on.
-    - I believe we can use a .vimrc file format for the generated keymap file, as it is a common format that can be easily imported into other editors. We can also provide an option to generate a JSON file for editors that support JSON keymap files, whatever will work!
+```bash
+nvim-keymap-migrator run                    # Extract and generate all formats
+nvim-keymap-migrator run --format vimrc     # Only generate .vimrc
+nvim-keymap-migrator run --output ./out     # Custom output directory
+nvim-keymap-migrator run --dry-run          # Print keymaps, don't write files
+nvim-keymap-migrator --help                 # Show help
+nvim-keymap-migrator --version              # Show version
+```
+
+## Output Files
+
+| File | Editor | Format |
+|------|--------|--------|
+| `keymaps.vimrc` | IdeaVim, VSCodeVim | Vimscript `map` commands |
+| `keybindings.json` | VS Code | JSON array with `key`, `command`, `when` |
+| `keymap.xml` | IntelliJ | XML with `<action>` and `<keyboard-shortcut>` |
+
+## Mapping Actions
+
+The `default-mappings.json` maps nvim patterns to editor commands:
+
+```json
+{
+  "find_files": {
+    "vscode": "workbench.action.quickOpen",
+    "intellij": "GotoFile"
+  },
+  "lsp.buf.definition": {
+    "vscode": "editor.action.revealDefinition",
+    "intellij": "GotoDeclaration"
+  }
+}
+```
+
+Users can extend this with a custom mappings file.
