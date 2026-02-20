@@ -22,7 +22,7 @@
     },
     "license": "GPL-3.0-only",
     "author": "Derek Corniello",
-    "type": "commonjs",
+    "type": "module",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
