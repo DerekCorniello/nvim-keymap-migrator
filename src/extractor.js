@@ -51,7 +51,7 @@ function getKeymapsForMode(mode) {
         nvim.on('close', (code) => {
             if (code === 0) {
                 try {
-                    const keymaps = JSON.parse(output || errorOutput);
+                    const keymaps = JSON.parse(output);
                     res({ mode, keymaps });
                 } catch (e) {
                     rej(`Failed to parse keymaps for mode ${mode}: ${e}`);
