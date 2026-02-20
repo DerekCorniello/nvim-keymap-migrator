@@ -14,20 +14,13 @@ const pkg = JSON.parse(
 
 const args = process.argv.slice(2);
 
-if (
-    args.length === 0 ||
-    (args.length === 1 && (args[0] === '-v' || args[0] === '--version'))
-) {
-    console.log(pkg.version);
-    process.exit(0);
-}
-
 switch (args[0]) {
     case 'help':
     case '--help':
     case '-h':
         console.log(`Usage: ${pkg.name} [options]`);
         // TODO: add more options
+        break;
 
     case 'version':
     case '--version':
@@ -38,4 +31,6 @@ switch (args[0]) {
     case undefined:
     case 'run':
         // TODO: do the logic stuff
+        console.log('Running...');
+        break;
 }
