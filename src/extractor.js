@@ -1,12 +1,12 @@
 // Extraction: runtime-first monkey-patch capture with strict-mode fallback.
 
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { spawn } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-const START_MARKER = '__NVIM_KEYMAP_MIGRATOR_JSON_START__';
-const END_MARKER = '__NVIM_KEYMAP_MIGRATOR_JSON_END__';
+const START_MARKER = "__NVIM_KEYMAP_MIGRATOR_JSON_START__";
+const END_MARKER = "__NVIM_KEYMAP_MIGRATOR_JSON_END__";
 
 const INJECT_LUA = `
 local user_keymaps = {}
@@ -123,28 +123,28 @@ end
 `;
 
 export async function extractKeymaps() {
-  const tempDir = await mkdtemp(join(tmpdir(), 'nvim-keymap-migrator-'));
-  const scriptPath = join(tempDir, 'inject.lua');
+  const tempDir = await mkdtemp(join(tmpdir(), "nvim-keymap-migrator-"));
+  const scriptPath = join(tempDir, "inject.lua");
 
   try {
-    await writeFile(scriptPath, INJECT_LUA, 'utf8');
+    await writeFile(scriptPath, INJECT_LUA, "utf8");
     let runtimeError = null;
     let payload = null;
 
     try {
-      payload = await runHeadlessExtraction(scriptPath, tempDir, 'runtime');
+      payload = await runHeadlessExtraction(scriptPath, tempDir, "runtime");
     } catch (error) {
       runtimeError = error;
     }
 
     if (!payload) {
-      payload = await runHeadlessExtraction(scriptPath, tempDir, 'strict');
+      payload = await runHeadlessExtraction(scriptPath, tempDir, "strict");
       payload._meta = payload._meta ?? {};
-      payload._meta.fallback_from = 'runtime';
+      payload._meta.fallback_from = "runtime";
       payload._meta.fallback_reason = summarizeError(runtimeError);
       payload._warnings = payload._warnings ?? [];
       payload._warnings.unshift(
-        `runtime_extraction_failed: ${summarizeError(runtimeError)}`
+        `runtime_extraction_failed: ${summarizeError(runtimeError)}`,
       );
     }
 
@@ -162,54 +162,52 @@ export async function extractKeymaps() {
 function runHeadlessExtraction(scriptPath, tempDir, mode) {
   return new Promise((resolve, reject) => {
     const logPath = join(tempDir, `nvim-${mode}.log`);
-    const args = ['--headless'];
+    const args = ["--headless"];
 
-    if (mode === 'strict') {
-      args.push('-u', 'NONE');
+    if (mode === "strict") {
+      args.push("-u", "NONE");
     }
 
-    args.push('--cmd', `lua dofile([[${scriptPath}]])`);
+    args.push("--cmd", `lua dofile([[${scriptPath}]])`);
 
-    if (mode === 'strict') {
-      args.push('-c', 'lua _G.__nkm_source_user_config()');
+    if (mode === "strict") {
+      args.push("-c", "lua _G.__nkm_source_user_config()");
     }
 
-    args.push('-c', `lua _G.__nkm_emit_and_quit('${mode}')`);
+    args.push("-c", `lua _G.__nkm_emit_and_quit('${mode}')`);
 
-    const nvim = spawn(
-      'nvim',
-      args,
-      {
-        env: {
-          ...process.env,
-          NVIM_LOG_FILE: logPath,
-        },
-      }
-    );
+    const nvim = spawn("nvim", args, {
+      env: {
+        ...process.env,
+        NVIM_LOG_FILE: logPath,
+      },
+    });
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    nvim.on('error', (err) => {
+    nvim.on("error", (err) => {
       reject(new Error(`Failed to start Neovim process: ${err.message}`));
     });
 
-    nvim.stdout.on('data', (data) => {
+    nvim.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    nvim.stderr.on('data', (data) => {
+    nvim.stderr.on("data", (data) => {
       stderr += data.toString();
     });
 
-    nvim.on('close', (code) => {
+    nvim.on("close", (code) => {
       const combined = `${stdout}\n${stderr}`;
       let payload = null;
       try {
         payload = extractPayload(combined);
       } catch (error) {
         reject(
-          new Error(`Failed to parse extraction payload (${mode}): ${error.message}`)
+          new Error(
+            `Failed to parse extraction payload (${mode}): ${error.message}`,
+          ),
         );
         return;
       }
@@ -222,16 +220,16 @@ function runHeadlessExtraction(scriptPath, tempDir, mode) {
       if (code !== 0) {
         reject(
           new Error(
-            `Neovim exited with code ${code}. Output:\n${combined.trim()}`
-          )
+            `Neovim exited with code ${code}. Output:\n${combined.trim()}`,
+          ),
         );
         return;
       }
 
       reject(
         new Error(
-          `Extraction output not found in Neovim stdout/stderr (${mode}).`
-        )
+          `Extraction output not found in Neovim stdout/stderr (${mode}).`,
+        ),
       );
     });
   });
@@ -255,13 +253,13 @@ function extractPayload(output) {
 
 function summarizeError(error) {
   if (!error) {
-    return 'unknown_runtime_error';
+    return "unknown_runtime_error";
   }
 
   const message =
-    typeof error.message === 'string' && error.message.trim()
+    typeof error.message === "string" && error.message.trim()
       ? error.message.trim()
       : String(error);
 
-  return message.split('\n')[0];
+  return message.split("\n")[0];
 }

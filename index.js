@@ -1,22 +1,22 @@
 #!/usr/bin/env node
 
-import { mkdir, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { extractKeymaps } from './src/extractor.js';
-import { detectConfig } from './src/config.js';
-import { detectIntents } from './src/detector.js';
-import { loadMappings, lookupIntent } from './src/registry.js';
-import { generateVimrc } from './src/generators/vimrc.js';
-import { generateIdeaVimrc } from './src/generators/intellij.js';
-import { generateVSCodeBindings } from './src/generators/vscode.js';
-import { generateReport } from './src/report.js';
+import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { extractKeymaps } from "./src/extractor.js";
+import { detectConfig } from "./src/config.js";
+import { detectIntents } from "./src/detector.js";
+import { loadMappings, lookupIntent } from "./src/registry.js";
+import { generateVimrc, isPureVimMapping } from "./src/generators/vimrc.js";
+import { generateIdeaVimrc } from "./src/generators/intellij.js";
+import { generateVSCodeBindings } from "./src/generators/vscode.js";
+import { generateReport } from "./src/report.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const pkg = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
+const pkg = JSON.parse(readFileSync(join(__dirname, "package.json"), "utf8"));
 const args = process.argv.slice(2);
 
 await main(args);
@@ -40,7 +40,7 @@ async function main(argv) {
     return;
   }
 
-  if (!['vscode', 'intellij'].includes(parsed.editor)) {
+  if (!["vscode", "intellij"].includes(parsed.editor)) {
     printHelp(`Unsupported editor: ${parsed.editor}`);
     process.exitCode = 1;
     return;
@@ -73,30 +73,55 @@ async function main(argv) {
 
     const vimrcText = generateVimrc(intents);
     const editorOutput =
-      parsed.editor === 'intellij'
+      parsed.editor === "intellij"
         ? generateIdeaVimrc(intents, { registry })
-        : JSON.stringify(generateVSCodeBindings(intents, { registry }), null, 2) + '\n';
+        : JSON.stringify(
+            generateVSCodeBindings(intents, { registry }),
+            null,
+            2,
+          ) + "\n";
 
     const outputDir = resolve(parsed.outputDir);
+    const vimrcFileName = parsed.vimrcName ?? "nkm.vimrc";
+    const editorFileName =
+      parsed.editorName ??
+      (parsed.editor === "intellij"
+        ? "nkm.ideavimrc"
+        : "nkm-vscode-keybindings.json");
+
     const outputFiles =
-      parsed.editor === 'intellij'
-        ? [join(outputDir, '.vimrc'), join(outputDir, '.ideavimrc')]
-        : [join(outputDir, '.vimrc'), join(outputDir, 'vscode-keybindings.json')];
+      parsed.editor === "intellij"
+        ? [join(outputDir, vimrcFileName), join(outputDir, editorFileName)]
+        : [join(outputDir, vimrcFileName), join(outputDir, editorFileName)];
+
+    const pureVim = intents.filter(isPureVimMapping);
+    const manualPlugin = manual.filter((item) => item.category === "plugin");
+    const manualOther = manual.filter((item) => item.category !== "plugin");
+    const unsupportedFiltered = unsupported.filter(
+      (item) => !isPureVimMapping(item),
+    );
+    const finalOutputs = parsed.dryRun ? [] : outputFiles;
+
+    const leaderLabel = formatKeyDisplay(config.leader);
 
     const report = generateReport({
       target: parsed.editor,
       configPath: config.config_path,
+      leader: leaderLabel,
       total: intents.length,
       translated,
       manual,
-      unsupported,
-      outputs: outputFiles,
+      manualPlugin,
+      manualOther,
+      pureVim,
+      unsupported: unsupportedFiltered,
+      outputs: finalOutputs,
     });
 
     if (!parsed.dryRun) {
       await mkdir(outputDir, { recursive: true });
-      await writeFile(outputFiles[0], vimrcText, 'utf8');
-      await writeFile(outputFiles[1], editorOutput, 'utf8');
+      await writeFile(outputFiles[0], vimrcText, "utf8");
+      await writeFile(outputFiles[1], editorOutput, "utf8");
     }
 
     console.log(report.trimEnd());
@@ -113,36 +138,50 @@ function parseArgs(argv) {
     help: false,
     version: false,
     dryRun: false,
-    outputDir: '.',
+    outputDir: ".",
     editor: null,
+    vimrcName: "nkm.vimrc",
+    editorName: null,
   };
 
   const tokens = [...argv];
 
-  if (tokens[0] === 'run') {
+  if (tokens[0] === "run") {
     tokens.shift();
   }
 
   for (let i = 0; i < tokens.length; i += 1) {
     const arg = tokens[i];
 
-    if (arg === '--help' || arg === '-h' || arg === 'help') {
+    if (arg === "--help" || arg === "-h" || arg === "help") {
       flags.help = true;
       continue;
     }
 
-    if (arg === '--version' || arg === '-v' || arg === 'version') {
+    if (arg === "--version" || arg === "-v" || arg === "version") {
       flags.version = true;
       continue;
     }
 
-    if (arg === '--dry-run') {
+    if (arg === "--dry-run") {
       flags.dryRun = true;
       continue;
     }
 
-    if (arg === '--output') {
+    if (arg === "--output") {
       flags.outputDir = tokens[i + 1] ?? flags.outputDir;
+      i += 1;
+      continue;
+    }
+
+    if (arg === "--vimrc-name" || arg === "--vimrc-file") {
+      flags.vimrcName = tokens[i + 1] ?? flags.vimrcName;
+      i += 1;
+      continue;
+    }
+
+    if (arg === "--editor-name" || arg === "--editor-file") {
+      flags.editorName = tokens[i + 1] ?? flags.editorName;
       i += 1;
       continue;
     }
@@ -159,23 +198,64 @@ function parseArgs(argv) {
 function printHelp(error) {
   if (error) {
     console.error(error);
-    console.error('');
+    console.error("");
   }
 
-  console.log(`Usage: ${pkg.bin['nvim-keybind-migrator']} <editor> [options]`);
-  console.log('');
-  console.log('Editors:');
-  console.log('  vscode      Generate .vimrc + vscode-keybindings.json');
-  console.log('  intellij    Generate .vimrc + .ideavimrc');
-  console.log('');
-  console.log('Options:');
-  console.log('  --output <dir>    Output directory (default: current directory)');
-  console.log('  --dry-run         Print report only, do not write files');
-  console.log('  --help, -h        Show help');
-  console.log('  --version, -v     Show version');
-  console.log('');
-  console.log('Compatibility:');
-  console.log('  run <editor> [options] is also accepted.');
+  console.log(`Usage: ${pkg.bin["nvim-keybind-migrator"]} <editor> [options]`);
+  console.log("");
+  console.log("Editors:");
+  console.log("  vscode      Generate .vimrc + vscode-keybindings.json");
+  console.log("  intellij    Generate .vimrc + .ideavimrc");
+  console.log("");
+  console.log("Options:");
+  console.log(
+    "  --output <dir>    Output directory (default: current directory)",
+  );
+  console.log("  --dry-run         Print report only, do not write files");
+  console.log(
+    "  --vimrc-name <f>  Custom name for the shared vimrc (default: .vimrc)",
+  );
+  console.log(
+    "  --editor-name <f> Custom name for the IDE file (.ideavimrc / vscode-keybindings.json by default)",
+  );
+  console.log("  --help, -h        Show help");
+  console.log("  --version, -v     Show version");
+  console.log("");
+  console.log("Compatibility:");
+  console.log("  run <editor> [options] is also accepted.");
+}
+
+function formatKeyDisplay(value) {
+  if (value == null) {
+    return "<none>";
+  }
+
+  if (value.length === 0) {
+    return "<empty>";
+  }
+
+  const special = {
+    " ": "<space>",
+    "\t": "<Tab>",
+    "\n": "<NL>",
+    "\r": "<CR>",
+    "\u001B": "<Esc>",
+  };
+
+  return [...value]
+    .map((char) => special[char] ?? printableChar(char))
+    .join("");
+}
+
+function printableChar(char) {
+  const code = char.charCodeAt(0);
+  if (code < 32) {
+    return `<0x${code.toString(16).padStart(2, "0")}>`;
+  }
+  if (char === "\\") {
+    return "\\\\";
+  }
+  return char;
 }
 
 function printDetectionWarnings(config, extracted) {
@@ -186,7 +266,7 @@ function printDetectionWarnings(config, extracted) {
 
   if (config.fallback_from) {
     console.warn(
-      `Warning: config detection fell back from ${config.fallback_from} to ${config.mode} (${config.fallback_reason})`
+      `Warning: config detection fell back from ${config.fallback_from} to ${config.mode} (${config.fallback_reason})`,
     );
   }
 
@@ -199,7 +279,7 @@ function printDetectionWarnings(config, extracted) {
 
   if (extractionMeta.fallback_from) {
     console.warn(
-      `Warning: extraction fell back from ${extractionMeta.fallback_from} to ${extractionMeta.extraction_mode} (${extractionMeta.fallback_reason})`
+      `Warning: extraction fell back from ${extractionMeta.fallback_from} to ${extractionMeta.extraction_mode} (${extractionMeta.fallback_reason})`,
     );
   }
 

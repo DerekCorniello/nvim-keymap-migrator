@@ -34,11 +34,13 @@ Uses `nvim --headless` to load your config and extract only **user-defined keyma
 - Keeps only mappings defined in `stdpath("config")`
 
 **Filtering strategy (pragmatic, 95% correct):**
+
 - `callback` source is in config path
 - `desc` field exists (most user mappings have this)
 - `script` field starts with config path
 
 **Output includes metadata:**
+
 - `buffer_local: true` for buffer-local keymaps
 - `origin: "config"` or `origin: "unknown"` with `warning` field
 
@@ -60,6 +62,7 @@ nvim-keymap-migrator/
 ## Keymap Data Structure
 
 Each extracted keymap has:
+
 - `lhs` - The key sequence (e.g., `<leader>ff`)
 - `rhs` - The action (command string or `<Lua function>`)
 - `mode` - Mode (n, i, v, x, o, c, t)
@@ -72,6 +75,7 @@ Each extracted keymap has:
 ## Buffer-Local Keymaps
 
 Buffer-local keymaps (LSP keymaps defined in `on_attach`, etc.) are:
+
 - Preserved in extraction output with `buffer_local: true`
 - Generated with `<buffer>` flag in vimrc
 
@@ -97,6 +101,7 @@ nvim-keymap-migrator --version              # Show version
 ## Future Expansion
 
 If demand arises for native IDE formats (VS Code keybindings.json, IntelliJ keymap.xml):
+
 - Add `src/mappings.js` for nvim → IDE command translation
 - Add `templates/default-mappings.json` and `templates/aliases.json`
 - Add generators for each format

@@ -1,10 +1,10 @@
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { spawn } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-const START_MARKER = '__NVIM_KEYMAP_MIGRATOR_CONFIG_START__';
-const END_MARKER = '__NVIM_KEYMAP_MIGRATOR_CONFIG_END__';
+const START_MARKER = "__NVIM_KEYMAP_MIGRATOR_CONFIG_START__";
+const END_MARKER = "__NVIM_KEYMAP_MIGRATOR_CONFIG_END__";
 
 const INJECT_LUA = `
 local warnings = {}
@@ -62,39 +62,41 @@ end
 `;
 
 export async function detectConfig() {
-  const tempDir = await mkdtemp(join(tmpdir(), 'nvim-keymap-migrator-config-'));
-  const scriptPath = join(tempDir, 'config.lua');
+  const tempDir = await mkdtemp(join(tmpdir(), "nvim-keymap-migrator-config-"));
+  const scriptPath = join(tempDir, "config.lua");
 
   try {
-    await writeFile(scriptPath, INJECT_LUA, 'utf8');
+    await writeFile(scriptPath, INJECT_LUA, "utf8");
 
     let runtimeError = null;
     let payload = null;
 
     try {
-      payload = await runConfigDetection(scriptPath, tempDir, 'runtime');
+      payload = await runConfigDetection(scriptPath, tempDir, "runtime");
     } catch (error) {
       runtimeError = error;
     }
 
     if (!payload) {
-      payload = await runConfigDetection(scriptPath, tempDir, 'strict');
-      payload.mode = 'strict';
-      payload.fallback_from = 'runtime';
+      payload = await runConfigDetection(scriptPath, tempDir, "strict");
+      payload.mode = "strict";
+      payload.fallback_from = "runtime";
       payload.fallback_reason = summarizeError(runtimeError);
-      payload.warnings = Array.isArray(payload.warnings) ? payload.warnings : [];
+      payload.warnings = Array.isArray(payload.warnings)
+        ? payload.warnings
+        : [];
       payload.warnings.unshift(
-        `runtime_config_detection_failed: ${summarizeError(runtimeError)}`
+        `runtime_config_detection_failed: ${summarizeError(runtimeError)}`,
       );
     }
 
     return {
-      leader: payload.leader ?? '\\',
+      leader: payload.leader ?? "\\",
       mapleader_set: Boolean(payload.mapleader_set),
       maplocalleader: payload.maplocalleader ?? null,
       config_path: payload.config_path ?? null,
       source_ok: payload.source_ok ?? null,
-      mode: payload.mode ?? 'unknown',
+      mode: payload.mode ?? "unknown",
       fallback_from: payload.fallback_from ?? null,
       fallback_reason: payload.fallback_reason ?? null,
       warnings: Array.isArray(payload.warnings) ? payload.warnings : [],
@@ -107,50 +109,52 @@ export async function detectConfig() {
 function runConfigDetection(scriptPath, tempDir, mode) {
   return new Promise((resolve, reject) => {
     const logPath = join(tempDir, `nvim-config-${mode}.log`);
-    const args = ['--headless'];
+    const args = ["--headless"];
 
-    if (mode === 'strict') {
-      args.push('-u', 'NONE');
+    if (mode === "strict") {
+      args.push("-u", "NONE");
     }
 
-    args.push('--cmd', `lua dofile([[${scriptPath}]])`);
+    args.push("--cmd", `lua dofile([[${scriptPath}]])`);
 
-    if (mode === 'strict') {
-      args.push('-c', 'lua _G.__nkm_cfg_source_user_config()');
+    if (mode === "strict") {
+      args.push("-c", "lua _G.__nkm_cfg_source_user_config()");
     }
 
-    args.push('-c', `lua _G.__nkm_cfg_emit('${mode}')`);
+    args.push("-c", `lua _G.__nkm_cfg_emit('${mode}')`);
 
-    const nvim = spawn('nvim', args, {
+    const nvim = spawn("nvim", args, {
       env: {
         ...process.env,
         NVIM_LOG_FILE: logPath,
       },
     });
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    nvim.on('error', (error) => {
+    nvim.on("error", (error) => {
       reject(new Error(`Failed to start Neovim process: ${error.message}`));
     });
 
-    nvim.stdout.on('data', (data) => {
+    nvim.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    nvim.stderr.on('data', (data) => {
+    nvim.stderr.on("data", (data) => {
       stderr += data.toString();
     });
 
-    nvim.on('close', (code) => {
+    nvim.on("close", (code) => {
       const combined = `${stdout}\n${stderr}`;
       let payload = null;
       try {
         payload = extractPayload(combined);
       } catch (error) {
         reject(
-          new Error(`Failed to parse config payload (${mode}): ${error.message}`)
+          new Error(
+            `Failed to parse config payload (${mode}): ${error.message}`,
+          ),
         );
         return;
       }
@@ -162,7 +166,9 @@ function runConfigDetection(scriptPath, tempDir, mode) {
 
       if (code !== 0) {
         reject(
-          new Error(`Neovim config detection failed (${mode}): ${combined.trim()}`)
+          new Error(
+            `Neovim config detection failed (${mode}): ${combined.trim()}`,
+          ),
         );
         return;
       }
@@ -189,13 +195,13 @@ function extractPayload(output) {
 
 function summarizeError(error) {
   if (!error) {
-    return 'unknown_runtime_error';
+    return "unknown_runtime_error";
   }
 
   const message =
-    typeof error.message === 'string' && error.message.trim()
+    typeof error.message === "string" && error.message.trim()
       ? error.message.trim()
       : String(error);
 
-  return message.split('\n')[0];
+  return message.split("\n")[0];
 }

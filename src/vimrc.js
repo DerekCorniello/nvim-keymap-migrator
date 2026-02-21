@@ -23,6 +23,5 @@
 }
 */
 export function generateVimrc(keymaps) {
-    const lines = [];
-
+  const lines = [];
 }

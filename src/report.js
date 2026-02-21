@@ -1,55 +1,81 @@
 // Translation report generator (Step 9 in PLAN.md).
 
-export function generateReport(data) {
-  const translated = Array.isArray(data?.translated) ? data.translated : [];
-  const manual = Array.isArray(data?.manual) ? data.manual : [];
-  const unsupported = Array.isArray(data?.unsupported) ? data.unsupported : [];
-  const outputs = Array.isArray(data?.outputs) ? data.outputs : [];
-  const total = Number.isFinite(data?.total) ? data.total : translated.length + manual.length + unsupported.length;
+function formatKeymap(item) {
+  return `${item.lhs ?? "<unknown>"} -> ${item.command ?? item.intent ?? item.raw_rhs ?? "??"}`;
+}
+
+export function generateReport(data = {}) {
+  const target = data.target ?? "unknown";
+  const configPath = data.configPath ?? "unknown";
+  const leader = data.leader ?? "<unknown>";
+  const translated = Array.isArray(data.translated) ? data.translated : [];
+  const pureVim = Array.isArray(data.pureVim) ? data.pureVim : [];
+  const manualPlugin = Array.isArray(data.manualPlugin)
+    ? data.manualPlugin
+    : [];
+  const manualOther = Array.isArray(data.manualOther) ? data.manualOther : [];
+  const unsupported = Array.isArray(data.unsupported) ? data.unsupported : [];
+  const outputs = Array.isArray(data.outputs) ? data.outputs : [];
+  const total = Number.isFinite(data.total)
+    ? data.total
+    : translated.length +
+      pureVim.length +
+      manualPlugin.length +
+      manualOther.length +
+      unsupported.length;
 
   const lines = [];
-  lines.push('=== nvim-keymap-migrator ===');
-  lines.push(`Target: ${data?.target ?? 'unknown'}`);
-  lines.push(`Config: ${data?.configPath ?? 'unknown'}`);
-  lines.push('');
+  lines.push("=== nvim-keymap-migrator ===");
+  lines.push(`Target: ${target}`);
+  lines.push(`Config: ${configPath}`);
+  lines.push(`Leader: ${leader}`);
+  lines.push("");
 
-  lines.push(`Translated: ${translated.length}`);
-  for (const item of translated.slice(0, 20)) {
-    lines.push(`  ${item.lhs} -> ${item.command}`);
+  lines.push(`IDE actions (${translated.length}):`);
+  if (translated.length === 0) {
+    lines.push("  (none)");
+  } else {
+    translated.forEach((item) => lines.push(`  ${formatKeymap(item)}`));
   }
-  if (translated.length > 20) {
-    lines.push(`  ... and ${translated.length - 20} more`);
-  }
-  lines.push('');
+  lines.push("");
 
-  lines.push(`Manual intervention: ${manual.length}`);
-  for (const item of manual.slice(0, 20)) {
-    lines.push(`  ${item.lhs} -> ${item.intent}`);
+  lines.push(`Pure Vim mappings (${pureVim.length}):`);
+  if (pureVim.length === 0) {
+    lines.push("  (none)");
+  } else {
+    pureVim.forEach((item) => lines.push(`  ${formatKeymap(item)}`));
   }
-  if (manual.length > 20) {
-    lines.push(`  ... and ${manual.length - 20} more`);
-  }
-  lines.push('');
+  lines.push("");
 
-  lines.push(`Unsupported: ${unsupported.length}`);
-  for (const item of unsupported.slice(0, 20)) {
-    lines.push(`  ${item.lhs} -> ${item.raw_rhs}`);
+  lines.push(`Manual plugin mappings (${manualPlugin.length}):`);
+  if (manualPlugin.length === 0) {
+    lines.push("  (none)");
+  } else {
+    manualPlugin.forEach((item) => lines.push(`  ${formatKeymap(item)}`));
   }
-  if (unsupported.length > 20) {
-    lines.push(`  ... and ${unsupported.length - 20} more`);
+  lines.push("");
+
+  lines.push(`Manual (other) mappings (${manualOther.length}):`);
+  if (manualOther.length === 0) {
+    lines.push("  (none)");
+  } else {
+    manualOther.forEach((item) => lines.push(`  ${formatKeymap(item)}`));
   }
-  lines.push('');
+  lines.push("");
+
+  lines.push(`Unsupported (no intent) (${unsupported.length}):`);
+  if (unsupported.length === 0) {
+    lines.push("  (none)");
+  } else {
+    unsupported.forEach((item) => lines.push(`  ${formatKeymap(item)}`));
+  }
+  lines.push("");
 
   if (outputs.length > 0) {
-    lines.push('Output files:');
-    for (const output of outputs) {
-      lines.push(`  ${output}`);
-    }
-    lines.push('');
+    lines.push("Outputs:");
+    outputs.forEach((output) => lines.push(`  ${output}`));
+    lines.push("");
   }
 
-  const coverage = total > 0 ? Math.round((translated.length / total) * 100) : 0;
-  lines.push(`Coverage: ${coverage}% (${translated.length}/${total})`);
-
-  return `${lines.join('\n')}\n`;
+  return `${lines.join("\n")}\n`;
 }

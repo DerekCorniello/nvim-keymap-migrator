@@ -21,12 +21,18 @@ npm install -g nvim-keymap-migrator
 ## Usage
 
 ```bash
-nvim-keymap-migrator run                    # Extract and generate .vimrc
-nvim-keymap-migrator run --output ./my.vim  # Custom output file
-nvim-keymap-migrator run --dry-run          # Print to stdout, don't write
-nvim-keymap-migrator --help                 # Show help
-nvim-keymap-migrator --version              # Show version
+nvim-keymap-migrator <editor> [options]
+
+  <editor>             one of `vscode` (vscode-keybindings.json) or `intellij` (.ideavimrc)
+  --output <dir>       directory for output files (default: current folder)
+  --dry-run            print the translation report without writing files
+  --vimrc-name <name>  custom name for the shared vimrc (default: .vimrc)
+  --editor-name <name> custom name for the IDE file (.ideavimrc / vscode-keybindings.json)
+  --help, -h           show help
+  --version, -v        show version
 ```
+
+Aliases such as `nvim-keymap-migrator run vscode` are still supported for backwards compatibility, but the `<editor>` argument is now required.
 
 ## Output
 
@@ -39,12 +45,14 @@ nnoremap <leader>e :NvimTreeToggle<CR>
 ```
 
 Import into your editor's vim emulator:
+
 - **IdeaVim (IntelliJ):** Copy to `~/.ideavimrc`
 - **VSCodeVim (VS Code):** Add to your VS Code settings
 
 ## What Gets Extracted
 
 Only **user-defined** keymaps are extracted (not plugin defaults or built-in mappings). The tool identifies these by checking:
+
 - If the keymap's callback source is in your config directory
 - If the keymap has a `desc` field
 - If the keymap's script path starts with your config path
@@ -62,6 +70,14 @@ cd nvim-keymap-migrator
 npm install
 npm link  # Makes command available globally
 ```
+
+## Linting
+
+```bash
+npm run lint
+```
+
+Runs `prettier --check` over the repo (make sure `npm install` has been run first).
 
 ## License
 
