@@ -1,1 +1,62 @@
-{}
+{
+  "lsp.definition": {
+    "vscode": "editor.action.revealDefinition",
+    "intellij": "GotoDeclaration"
+  },
+  "lsp.declaration": {
+    "vscode": "editor.action.goToDeclaration",
+    "intellij": "GotoDeclaration"
+  },
+  "lsp.implementation": {
+    "vscode": "editor.action.goToImplementation",
+    "intellij": "GotoImplementation"
+  },
+  "lsp.references": {
+    "vscode": "editor.action.goToReferences",
+    "intellij": "FindUsages"
+  },
+  "lsp.hover": {
+    "vscode": "editor.action.showHover",
+    "intellij": "QuickImplementations"
+  },
+  "lsp.rename": {
+    "vscode": "editor.action.rename",
+    "intellij": "RenameElement"
+  },
+  "lsp.code_action": {
+    "vscode": "editor.action.quickFix",
+    "intellij": "ShowIntentionActions"
+  },
+  "lsp.format": {
+    "vscode": "editor.action.formatDocument",
+    "intellij": "ReformatCode"
+  },
+  "lsp.signature_help": {
+    "vscode": "editor.action.triggerParameterHints",
+    "intellij": "ParameterInfo"
+  },
+  "lsp.type_definition": {
+    "vscode": "editor.action.goToTypeDefinition",
+    "intellij": "GotoTypeDeclaration"
+  },
+  "lsp.add_workspace_folder": {
+    "vscode": "workbench.action.addRootFolder",
+    "intellij": "AddNewProjectToWorkspace"
+  },
+  "lsp.remove_workspace_folder": {
+    "vscode": "workbench.action.removeRootFolder",
+    "intellij": "RemoveProjectFromWorkspace"
+  },
+  "lsp.diagnostic_next": {
+    "vscode": "editor.action.marker.next",
+    "intellij": "GotoNextError"
+  },
+  "lsp.diagnostic_prev": {
+    "vscode": "editor.action.marker.prev",
+    "intellij": "GotoPreviousError"
+  },
+  "lsp.diagnostic_setloclist": {
+    "vscode": "workbench.actions.view.problems",
+    "intellij": "ViewProblems"
+  }
+}

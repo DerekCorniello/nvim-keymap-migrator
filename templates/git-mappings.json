@@ -1,1 +1,38 @@
-{}
+{
+  "git.fugitive": {
+    "vscode": "git.openRepository",
+    "intellij": "Vcs.ShowVersionControlIntegration"
+  },
+  "git.status": {
+    "vscode": "git.openChange",
+    "intellij": "ChangesView"
+  },
+  "git.push": {
+    "vscode": "git.push",
+    "intellij": "Vcs.Push"
+  },
+  "git.pull": {
+    "vscode": "git.pull",
+    "intellij": "Vcs.Update"
+  },
+  "git.commit": {
+    "vscode": "git.commit",
+    "intellij": "CheckinProject"
+  },
+  "git.add": {
+    "vscode": "git.stage",
+    "intellij": "Vcs.Add"
+  },
+  "git.blame": {
+    "vscode": "git.openFile",
+    "intellij": "Annotate"
+  },
+  "git.diff": {
+    "vscode": "git.openChange",
+    "intellij": "ShowDiff"
+  },
+  "git.log": {
+    "vscode": "git.viewHistory",
+    "intellij": "Vcs.ShowTabbedFileHistory"
+  }
+}

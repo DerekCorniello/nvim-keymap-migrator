@@ -1,1 +1,34 @@
-{}
+{
+  "editing.format": {
+    "vscode": "editor.action.formatDocument",
+    "intellij": "ReformatCode"
+  },
+  "editing.comment_toggle": {
+    "vscode": "editor.action.commentLine",
+    "intellij": "CommentByLineComment"
+  },
+  "editing.delete_line": {
+    "vscode": "editor.action.deleteLines",
+    "intellij": "EditorDeleteLine"
+  },
+  "editing.move_line_up": {
+    "vscode": "editor.action.moveLinesUpAction",
+    "intellij": "MoveLineUp"
+  },
+  "editing.move_line_down": {
+    "vscode": "editor.action.moveLinesDownAction",
+    "intellij": "MoveLineDown"
+  },
+  "editing.duplicate_line": {
+    "vscode": "editor.action.copyLinesDownAction",
+    "intellij": "DuplicateLines"
+  },
+  "editing.join_lines": {
+    "vscode": "editor.action.joinLines",
+    "intellij": "JoinLines"
+  },
+  "editing.replace_with_yank": {
+    "vscode": "editor.action.clipboardPasteAction",
+    "intellij": "$Paste"
+  }
+}

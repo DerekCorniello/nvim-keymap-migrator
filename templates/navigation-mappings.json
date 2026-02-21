@@ -1,1 +1,50 @@
-{}
+{
+  "navigation.file_explorer": {
+    "vscode": "workbench.action.toggleSidebarVisibility",
+    "intellij": "ProjectViewSwitcher"
+  },
+  "navigation.find_files": {
+    "vscode": "workbench.action.quickOpen",
+    "intellij": "GotoFile"
+  },
+  "navigation.live_grep": {
+    "vscode": "workbench.action.findInFiles",
+    "intellij": "FindInPath"
+  },
+  "navigation.buffers": {
+    "vscode": "workbench.action.showAllEditors",
+    "intellij": "RecentFiles"
+  },
+  "navigation.recent_files": {
+    "vscode": "workbench.action.openRecent",
+    "intellij": "RecentFiles"
+  },
+  "navigation.help_tags": {
+    "vscode": "workbench.action.openDocumentation",
+    "intellij": "HelpTopics"
+  },
+  "navigation.keymaps": {
+    "vscode": "workbench.action.openGlobalKeybindings",
+    "intellij": "KeymapReference"
+  },
+  "navigation.grep_string": {
+    "vscode": "editor.action.search.selection.wildcard",
+    "intellij": "FindWordAtCaret"
+  },
+  "navigation.buffer_search": {
+    "vscode": "editor.actions.findWithArgs",
+    "intellij": "FindInFile"
+  },
+  "navigation.resume_search": {
+    "vscode": "workbench.action.quickOpenNavigateNext",
+    "intellij": "SearchAgain"
+  },
+  "navigation.diagnostics": {
+    "vscode": "workbench.actions.view.problems",
+    "intellij": "ViewProblems"
+  },
+  "navigation.command_history": {
+    "vscode": "workbench.action.openRecent",
+    "intellij": "GotoAction"
+  }
+}
