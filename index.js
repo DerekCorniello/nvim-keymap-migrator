@@ -33,8 +33,28 @@ switch (args[0]) {
     case 'run':
         try {
             let keymaps = await extractKeymaps();
+            const meta = keymaps._meta ?? {};
+            const warnings = Array.isArray(keymaps._warnings) ? keymaps._warnings : [];
+
             console.log(`Extracted ${keymaps.length} user-defined keymaps:`);
-            console.log(keymaps[0]);
+            console.log(`Extraction mode: ${meta.extraction_mode ?? 'unknown'}`);
+
+            if (meta.fallback_from) {
+                console.warn(
+                    `Warning: fell back from ${meta.fallback_from} mode to ${meta.extraction_mode} mode (${meta.fallback_reason})`
+                );
+            }
+
+            if (warnings.length > 0) {
+                console.warn(`Extraction warnings (${warnings.length}):`);
+                warnings.slice(0, 5).forEach((warning) => {
+                    console.warn(`- ${warning}`);
+                });
+            }
+
+            if (keymaps.length > 0) {
+                console.log(keymaps[0]);
+            }
         } catch (err) {
             console.error('An error occurred:', err);
         }
