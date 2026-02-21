@@ -145,3 +145,7 @@ vite.config.ts.timestamp-*
 
 # Plan files
 **/*PLAN*.md
+
+# Project specific files
+**/*rc
+**/*keybindings.json
