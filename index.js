@@ -33,7 +33,8 @@ switch (args[0]) {
     case 'run':
         try {
             let keymaps = await extractKeymaps();
-            console.log('Extracted keymaps:', keymaps);
+            console.log(`Extracted ${keymaps.length} user-defined keymaps:`);
+            console.log(keymaps[0]);
         } catch (err) {
             console.error('An error occurred:', err);
         }

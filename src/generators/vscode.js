@@ -1,5 +1,8 @@
-// Generates keybindings.json for VS Code native keybindings
+// VS Code keybindings generation (Step 8 in PLAN.md).
 
-export function generateVscode(keymaps, mappings) {
-  // TODO: Implement VS Code JSON generation
+export function generateVSCodeBindings(_keymaps) {
+  return {
+    'vim.normalModeKeyBindings': [],
+    'vim.visualModeKeyBindings': []
+  };
 }

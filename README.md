@@ -1,6 +1,10 @@
 # nvim-keymap-migrator
 
-A CLI tool that extracts user-defined keymaps from your Neovim configuration and generates importable keymap files for other editors.
+A CLI tool that extracts user-defined keymaps from your Neovim configuration and generates a `.vimrc` file for use with vim emulator plugins.
+
+## Why?
+
+When moving from Neovim to another editor (VS Code, IntelliJ, etc.), you'll likely use a vim emulator plugin like IdeaVim or VSCodeVim. This tool extracts your custom keymaps from your Neovim config so you don't have to manually recreate them.
 
 ## Installation
 
@@ -17,131 +21,38 @@ npm install -g nvim-keymap-migrator
 ## Usage
 
 ```bash
-# Extract keymaps and generate all formats
-nvim-keymap-migrator run
-
-# Generate only specific format(s)
-nvim-keymap-migrator run --format vimrc
-nvim-keymap-migrator run --format vscode
-nvim-keymap-migrator run --format intellij
-nvim-keymap-migrator run --format vimrc,vscode
-
-# Custom output directory
-nvim-keymap-migrator run --output ~/Desktop/keymaps
-
-# Preview without writing files
-nvim-keymap-migrator run --dry-run
-
-# Show help
-nvim-keymap-migrator --help
-nvim-keymap-migrator --version
+nvim-keymap-migrator run                    # Extract and generate .vimrc
+nvim-keymap-migrator run --output ./my.vim  # Custom output file
+nvim-keymap-migrator run --dry-run          # Print to stdout, don't write
+nvim-keymap-migrator --help                 # Show help
+nvim-keymap-migrator --version              # Show version
 ```
 
-## How It Works
+## Output
 
-### 1. Extraction
-
-Uses `nvim --headless` to load your config and extract **only user-defined keymaps**:
-
-- Filters out built-in Neovim mappings
-- Filters out plugin mappings (outside your config directory)
-- Preserves buffer-local keymaps (LSP, etc.) with metadata
-
-### 2. Matching Pipeline
-
-Deterministic pipeline for mapping nvim actions to IDE commands:
-
-```
-desc/rhs → normalize → alias resolve → canonical key → IDE command
-```
-
-- **Normalize**: lowercase, spaces → underscores, strip punctuation
-- **Alias resolve**: Check aliases for known variations
-- **Canonical lookup**: Check mappings for IDE commands
-
-### 3. Generation
-
-Outputs keymap files in multiple formats.
-
-## Output Formats
-
-### `.vimrc` (Vim Emulator Plugins)
-
-For use with IdeaVim (IntelliJ) or VSCodeVim (VS Code). Includes ALL keymaps - even unmapped ones.
+Generates a `.vimrc` file containing your user-defined keymaps:
 
 ```vim
 nnoremap <silent> <leader>ff <cmd>lua require('telescope.builtin').find_files()<CR>
 vnoremap J :m '>+1<CR>gv=gv
+nnoremap <leader>e :NvimTreeToggle<CR>
 ```
 
-### `keybindings.json` (VS Code Native)
+Import into your editor's vim emulator:
+- **IdeaVim (IntelliJ):** Copy to `~/.ideavimrc`
+- **VSCodeVim (VS Code):** Add to your VS Code settings
 
-Native VS Code keybindings format. Only includes mapped keymaps.
+## What Gets Extracted
 
-```json
-[
-  { "key": "ctrl+p", "command": "workbench.action.quickOpen" },
-  { "key": "ctrl+shift+f", "command": "workbench.action.findInFiles" }
-]
-```
+Only **user-defined** keymaps are extracted (not plugin defaults or built-in mappings). The tool identifies these by checking:
+- If the keymap's callback source is in your config directory
+- If the keymap has a `desc` field
+- If the keymap's script path starts with your config path
 
-Import: VS Code → Keyboard Shortcuts → Open JSON icon → paste contents
+## Limitations
 
-### `keymap.xml` (IntelliJ Native)
-
-Native IntelliJ keymap format. Only includes mapped keymaps.
-
-```xml
-<keymap version="1" name="nvim-import" parent="Default for XWin">
-  <action id="GotoFile">
-    <keyboard-shortcut first-keystroke="ctrl P" />
-  </action>
-</keymap>
-```
-
-Import: Settings → Keymap → Import → select file
-
-## Lua Callback Handling
-
-Neovim keymaps bound to Lua functions are opaque to other editors. This tool:
-
-1. Uses the `desc` field to identify the action
-2. Matches against the mapping database
-3. Includes all in `.vimrc` (for vim emulator plugins)
-4. Skips unmapped in native formats with warning
-
-**Tip:** Add `desc` fields to your Lua keymaps:
-
-```lua
-vim.keymap.set('n', '<leader>ff', function() 
-  require('telescope.builtin').find_files() 
-end, { desc = 'find_files' })
-```
-
-## Buffer-Local Keymaps
-
-LSP keymaps (defined in `on_attach`) and other buffer-local keymaps are:
-
-- Preserved in extraction with `buffer_local: true` metadata
-- Listed separately in the summary output
-- Included in `.vimrc` output
-
-## Custom Mappings
-
-Extend the built-in mappings by editing:
-- `templates/default-mappings.json` - Canonical mappings
-- `templates/aliases.json` - Alias variations
-
-Or create `.nvim-mappings.json` in your config directory.
-
-## Supported Editors
-
-| Editor | Format | Import Method |
-|--------|--------|---------------|
-| VS Code + VSCodeVim | `.vimrc` | Copy to settings |
-| VS Code (native) | `keybindings.json` | Keyboard Shortcuts → JSON |
-| IntelliJ + IdeaVim | `.vimrc` | Copy to `~/.ideavimrc` |
-| IntelliJ (native) | `keymap.xml` | Settings → Keymap → Import |
+- `<Lua function>` keymaps without a command string are included as comments (vim emulators can't execute arbitrary Lua)
+- Buffer-local keymaps are marked with `<buffer>` - they'll only work in the current buffer
 
 ## Development
 

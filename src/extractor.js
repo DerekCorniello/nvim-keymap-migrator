@@ -18,7 +18,6 @@ export async function extractKeymaps() {
     }
 
     const keymaps = results.map(({ value }) => value.keymaps).flat();
-    console.log(`Extracted ${keymaps.length} user-defined keymaps`);
     return keymaps;
 }
 

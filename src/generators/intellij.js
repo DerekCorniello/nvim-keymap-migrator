@@ -1,5 +1,5 @@
-// Generates keymap.xml for IntelliJ native keymaps
+// IntelliJ/IdeaVim generation (Step 7 in PLAN.md).
 
-export function generateIntellij(keymaps, mappings) {
-  // TODO: Implement IntelliJ XML generation
+export function generateIdeaVimrc(_keymaps) {
+  return '';
 }
