@@ -1,72 +1,188 @@
-// Extracts keymaps from Neovim using headless mode
-// Uses child_process.spawn to run nvim --headless
-// Calls vim.api.nvim_get_keymap() for each mode
-// Filters to only user-defined keymaps
+// Step 1 extraction: monkey-patch vim.keymap.set, source user config, collect mappings.
 
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
-const modes = ['n', 'i', 'v', 'x', 's', 'o', 'c', 't']
+const START_MARKER = '__NVIM_KEYMAP_MIGRATOR_JSON_START__';
+const END_MARKER = '__NVIM_KEYMAP_MIGRATOR_JSON_END__';
 
-export async function extractKeymaps() {
-    const results = await Promise.allSettled(modes.map(mode => getKeymapsForMode(mode)));
+const INJECT_LUA = `
+local user_keymaps = {}
+local warnings = {}
+local original_set = vim.keymap.set
 
-    // get failed tasks
-    const failed = results.filter(r => r.status === 'rejected');
-    if (failed.length > 0) {
-        failed.forEach(({ reason }) => console.error(`Failed to get keymaps: ${reason}`));
-        process.exit(1);
+local function normalize_modes(mode)
+  if type(mode) == 'table' then
+    return mode
+  end
+  if type(mode) == 'string' then
+    return { mode }
+  end
+  return { 'n' }
+end
+
+vim.keymap.set = function(mode, lhs, rhs, opts)
+  opts = opts or {}
+  local modes = normalize_modes(mode)
+
+  for _, single_mode in ipairs(modes) do
+    local entry = {
+      mode = single_mode,
+      lhs = lhs,
+      rhs_type = type(rhs),
+      rhs = nil,
+      rhs_source = nil,
+      rhs_what = nil,
+      desc = opts.desc,
+      silent = opts.silent,
+      noremap = opts.noremap,
+      buffer = opts.buffer,
+      nowait = opts.nowait,
+      expr = opts.expr,
+      callback_source = nil,
     }
 
-    const keymaps = results.map(({ value }) => value.keymaps).flat();
-    return keymaps;
+    if type(rhs) == 'function' then
+      entry.rhs = '<Lua function>'
+      local info = debug.getinfo(rhs, 'S')
+      if info then
+        entry.rhs_source = info.source
+        entry.rhs_what = info.what
+        entry.callback_source = info.source
+      end
+    elseif type(rhs) == 'string' then
+      entry.rhs = rhs
+    else
+      entry.rhs = tostring(rhs)
+    end
+
+    table.insert(user_keymaps, entry)
+  end
+
+  return original_set(mode, lhs, rhs, opts)
+end
+
+local config_path = vim.fn.stdpath('config')
+local init_lua = config_path .. '/init.lua'
+local init_vim = config_path .. '/init.vim'
+local source_ok = false
+
+if vim.fn.filereadable(init_lua) == 1 then
+  local ok, err = pcall(dofile, init_lua)
+  source_ok = ok
+  if not ok then
+    table.insert(warnings, 'failed_to_source_init_lua: ' .. tostring(err))
+  end
+elseif vim.fn.filereadable(init_vim) == 1 then
+  local ok, err = pcall(vim.cmd, 'source ' .. vim.fn.fnameescape(init_vim))
+  source_ok = ok
+  if not ok then
+    table.insert(warnings, 'failed_to_source_init_vim: ' .. tostring(err))
+  end
+else
+  table.insert(warnings, 'no_init_file_found')
+end
+
+local payload = {
+  keymaps = user_keymaps,
+  _meta = {
+    leader = vim.g.mapleader or vim.g.maplocalleader or '\\\\',
+    mapleader_set = (vim.g.mapleader ~= nil or vim.g.maplocalleader ~= nil),
+    config_path = config_path,
+    source_ok = source_ok,
+  },
+  _warnings = warnings,
 }
 
-function getKeymapsForMode(mode) {
-    return new Promise((resolve, reject) => {
-        // some lua shenanigans
-        // gets config path then iterates all keymaps for the mode
-        // checks if each keymap is user defined by looking at callback source desc field
-        // or script path strips non serializable fields and adds metadata
-        // like buffer_local origin and warning then encodes to json and writes to stdout
-        const cmd = `lua local config_path=vim.fn.stdpath('config'); local maps=vim.api.nvim_get_keymap('${mode}'); local clean={}; for i,m in ipairs(maps) do local is_user=false; local origin='unknown'; local warning=nil; if m.callback then local info=debug.getinfo(m.callback,'S'); if info and info.source and string.sub(info.source,2)==config_path then is_user=true; origin='config' else warning='callback_source_outside_config' end end; if not is_user and m.desc then is_user=true; origin='config' end; if not is_user and m.script and string.find(m.script,'^'..config_path) then is_user=true; origin='config' end; if is_user then local c={}; for k,v in pairs(m) do if k~='callback' then c[k]=v end end; c.buffer_local=m.buffer~=nil and m.buffer~=0; c.origin=origin; if warning then c.warning=warning end; table.insert(clean,c) end end; io.write(vim.json.encode(clean))`;
+io.write('${START_MARKER}\\n')
+io.write(vim.json.encode(payload))
+io.write('\\n${END_MARKER}\\n')
+`;
 
-        // spawn a headless nvim process to get keymaps for the given mode
-        const nvim = spawn('nvim', [
-            '--headless',
-            '-c',
-            cmd,
-            '-c',
-            'q'
-        ]);
+export async function extractKeymaps() {
+  const tempDir = await mkdtemp(join(tmpdir(), 'nvim-keymap-migrator-'));
+  const scriptPath = join(tempDir, 'inject.lua');
 
-        nvim.on('error', (err) => {
-            reject(`Failed to start Neovim process, is it installed?\n\n${err}`);
-        });
+  try {
+    await writeFile(scriptPath, INJECT_LUA, 'utf8');
+    const payload = await runHeadlessExtraction(scriptPath);
+    const keymaps = Array.isArray(payload?.keymaps) ? payload.keymaps : [];
 
-        // get all stdout and stderr output
-        let output = '';
-        let errorOutput = '';
-        nvim.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-        nvim.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
+    keymaps._meta = payload?._meta ?? {};
+    keymaps._warnings = payload?._warnings ?? [];
 
-        // when the process exits, parse the output and resolve or reject the promise
-        nvim.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    // nvim outputs to stderr in some versions, try both
-                    const jsonOutput = output || errorOutput;
-                    const keymaps = JSON.parse(jsonOutput);
-                    resolve({ mode, keymaps });
-                } catch (e) {
-                    reject(`Failed to parse keymaps for mode ${mode}: ${e}`);
-                }
-            } else {
-                reject(`Neovim process exited with code ${code}: ${errorOutput}`);
-            }
-        });
+    return keymaps;
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+function runHeadlessExtraction(scriptPath) {
+  return new Promise((resolve, reject) => {
+    const nvim = spawn('nvim', [
+      '--headless',
+      '-u',
+      'NONE',
+      '-c',
+      `lua dofile([[${scriptPath}]])`,
+      '-c',
+      'qa!',
+    ]);
+
+    let stdout = '';
+    let stderr = '';
+
+    nvim.on('error', (err) => {
+      reject(new Error(`Failed to start Neovim process: ${err.message}`));
     });
+
+    nvim.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    nvim.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    nvim.on('close', (code) => {
+      const combined = `${stdout}\n${stderr}`;
+      const payload = extractPayload(combined);
+
+      if (payload) {
+        resolve(payload);
+        return;
+      }
+
+      if (code !== 0) {
+        reject(
+          new Error(
+            `Neovim exited with code ${code}. Output:\n${combined.trim()}`
+          )
+        );
+        return;
+      }
+
+      reject(
+        new Error('Extraction output not found in Neovim stdout/stderr.')
+      );
+    });
+  });
+}
+
+function extractPayload(output) {
+  const start = output.indexOf(START_MARKER);
+  const end = output.indexOf(END_MARKER);
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  const json = output.slice(start + START_MARKER.length, end).trim();
+  if (!json) {
+    return null;
+  }
+
+  return JSON.parse(json);
 }
