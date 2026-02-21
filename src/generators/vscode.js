@@ -2,6 +2,8 @@
 
 import { loadMappings, lookupIntent } from "../registry.js";
 
+export const MANAGED_BY_MARKER = "nvim-keymap-migrator";
+
 const MODE_TO_SECTION = {
   n: "vim.normalModeKeyBindings",
   v: "vim.visualModeKeyBindings",
@@ -9,6 +11,12 @@ const MODE_TO_SECTION = {
   s: "vim.visualModeKeyBindings",
   i: "vim.insertModeKeyBindings",
 };
+
+export const VIM_KEYBINDING_SECTIONS = [
+  "vim.normalModeKeyBindings",
+  "vim.visualModeKeyBindings",
+  "vim.insertModeKeyBindings",
+];
 
 export function generateVSCodeBindings(keymaps = [], options = {}) {
   const registry = options.registry ?? loadMappings();
@@ -51,6 +59,7 @@ export function generateVSCodeBindings(keymaps = [], options = {}) {
     sections[section].push({
       before,
       commands: [command],
+      _managedBy: "nvim-keymap-migrator",
     });
   }
 

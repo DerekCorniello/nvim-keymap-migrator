@@ -12,6 +12,14 @@ import { generateVimrc, isPureVimMapping } from "./src/generators/vimrc.js";
 import { generateIdeaVimrc } from "./src/generators/intellij.js";
 import { generateVSCodeBindings } from "./src/generators/vscode.js";
 import { generateReport } from "./src/report.js";
+import {
+  ensureNamespaceDir,
+  getRcPath,
+  writeMetadata,
+  readMetadata,
+  createInitialMetadata,
+} from "./src/namespace.js";
+import { runInstall, runUninstall } from "./src/install.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,6 +42,23 @@ async function main(argv) {
     return;
   }
 
+  if (parsed.command === "uninstall") {
+    await handleUninstall();
+    return;
+  }
+
+  if (parsed.command === "install") {
+    if (!parsed.editor) {
+      printHelp(
+        'Missing required <editor> for install. Use "vscode" or "intellij".',
+      );
+      process.exitCode = 1;
+      return;
+    }
+    await handleInstall(parsed.editor);
+    return;
+  }
+
   if (!parsed.editor) {
     printHelp('Missing required <editor>. Use "vscode" or "intellij".');
     process.exitCode = 1;
@@ -46,6 +71,10 @@ async function main(argv) {
     return;
   }
 
+  await handleGenerate(parsed);
+}
+
+async function handleGenerate(parsed) {
   try {
     const config = await detectConfig();
     const extracted = await extractKeymaps();
@@ -133,6 +162,148 @@ async function main(argv) {
   }
 }
 
+async function handleInstall(editor) {
+  try {
+    const config = await detectConfig();
+    const extracted = await extractKeymaps();
+    const intents = detectIntents(extracted);
+    const registry = loadMappings();
+
+    const translated = [];
+    const manual = [];
+    const unsupported = [];
+
+    for (const item of intents) {
+      if (!item.intent) {
+        unsupported.push(item);
+        continue;
+      }
+
+      const command = lookupIntent(item.intent, editor, registry);
+      if (!command) {
+        manual.push(item);
+        continue;
+      }
+
+      translated.push({ ...item, command });
+    }
+
+    const vimrcText = generateVimrc(intents);
+    const pureVim = intents.filter(isPureVimMapping);
+    const counts = {
+      total: intents.length,
+      translated: translated.length,
+      pureVim: pureVim.length,
+      manual: manual.length,
+      unsupported: unsupported.length,
+    };
+
+    let result;
+    let vimrcPath;
+
+    if (editor === "intellij") {
+      const ideaVimrcText = generateIdeaVimrc(intents, { registry });
+      await ensureNamespaceDir();
+
+      const rcPath = getRcPath("intellij");
+      vimrcPath = getRcPath("neovim");
+
+      await writeFile(rcPath, ideaVimrcText, "utf8");
+      await writeFile(vimrcPath, vimrcText, "utf8");
+
+      result = await runInstall(editor, config, counts, {
+        files: [rcPath, vimrcPath],
+      });
+    } else if (editor === "vscode") {
+      const vscodeBindings = generateVSCodeBindings(intents, { registry });
+      await ensureNamespaceDir();
+
+      vimrcPath = getRcPath("neovim");
+      await writeFile(vimrcPath, vimrcText, "utf8");
+
+      result = await runInstall(editor, config, counts, {
+        bindings: vscodeBindings,
+        files: [vimrcPath],
+      });
+    }
+
+    const leaderLabel = formatKeyDisplay(config.leader);
+
+    console.log("=== nvim-keymap-migrator install ===");
+    console.log(`Editor: ${editor}`);
+    console.log(`Config: ${config.config_path}`);
+    console.log(`Leader: ${leaderLabel}`);
+    console.log("");
+    console.log(`Shared VimRC: ${vimrcPath}`);
+    console.log("");
+
+    if (editor === "intellij") {
+      console.log("IdeaVim:");
+      console.log(`  RC file: ${result.rcPath}`);
+      console.log(`  Bootstrap added to ~/.ideavimrc`);
+    } else if (editor === "vscode") {
+      console.log("VS Code:");
+      console.log(`  Keybindings merged into settings.json`);
+      if (result.vscode?.sections) {
+        console.log(`  Sections updated: ${result.vscode.sections.join(", ")}`);
+      }
+      if (result.vscode?.warnings) {
+        for (const w of result.vscode.warnings) {
+          console.log(`  ${w}`);
+        }
+      }
+    }
+
+    console.log("");
+    console.log(`Total keymaps: ${counts.total}`);
+    console.log(`Translated: ${counts.translated}`);
+    console.log(`Pure Vim: ${counts.pureVim}`);
+    console.log(`Manual review: ${counts.manual}`);
+    console.log(`Unsupported: ${counts.unsupported}`);
+
+    printDetectionWarnings(config, extracted);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exitCode = 1;
+  }
+}
+
+async function handleUninstall() {
+  try {
+    const metadata = await readMetadata();
+
+    console.log("=== nvim-keymap-migrator uninstall ===");
+
+    const result = await runUninstall();
+
+    if (result.ideavim?.uninstalled) {
+      console.log("IdeaVim: bootstrap block removed from ~/.ideavimrc");
+    } else {
+      console.log("IdeaVim: no bootstrap block found");
+    }
+
+    if (result.vscode?.uninstalled) {
+      console.log(
+        `VS Code: ${result.vscode.removed} keybinding(s) removed from settings.json`,
+      );
+    } else {
+      console.log("VS Code: no managed keybindings found");
+    }
+
+    console.log("Namespace directory removed.");
+
+    if (metadata) {
+      console.log("");
+      console.log(`Previous install info:`);
+      console.log(`  Created: ${metadata.created_at}`);
+      console.log(`  Leader: ${metadata.leader}`);
+    }
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exitCode = 1;
+  }
+}
+
 function parseArgs(argv) {
   const flags = {
     help: false,
@@ -142,13 +313,10 @@ function parseArgs(argv) {
     editor: null,
     vimrcName: "nkm.vimrc",
     editorName: null,
+    command: null,
   };
 
   const tokens = [...argv];
-
-  if (tokens[0] === "run") {
-    tokens.shift();
-  }
 
   for (let i = 0; i < tokens.length; i += 1) {
     const arg = tokens[i];
@@ -186,7 +354,21 @@ function parseArgs(argv) {
       continue;
     }
 
-    if (!flags.editor) {
+    if (arg === "install") {
+      flags.command = "install";
+      continue;
+    }
+
+    if (arg === "uninstall") {
+      flags.command = "uninstall";
+      continue;
+    }
+
+    if (arg === "run") {
+      continue;
+    }
+
+    if (!flags.editor && ["vscode", "intellij"].includes(arg)) {
       flags.editor = arg;
       continue;
     }
@@ -201,28 +383,38 @@ function printHelp(error) {
     console.error("");
   }
 
-  console.log(`Usage: ${pkg.bin["nvim-keybind-migrator"]} <editor> [options]`);
+  console.log(`Usage: ${pkg.bin["nvim-keybind-migrator"]} <command> [options]`);
+  console.log("");
+  console.log("Commands:");
+  console.log("  <editor>           Generate outputs (vscode or intellij)");
+  console.log("  install <editor>   Install bootstrap hooks for editor");
+  console.log("  uninstall          Remove all bootstrap hooks and namespace");
   console.log("");
   console.log("Editors:");
-  console.log("  vscode      Generate .vimrc + vscode-keybindings.json");
-  console.log("  intellij    Generate .vimrc + .ideavimrc");
+  console.log("  vscode             VS Code with VSCodeVim extension");
+  console.log("  intellij           IntelliJ with IdeaVim plugin");
   console.log("");
   console.log("Options:");
   console.log(
-    "  --output <dir>    Output directory (default: current directory)",
+    "  --output <dir>    Output directory for <editor> (default: current)",
   );
   console.log("  --dry-run         Print report only, do not write files");
   console.log(
-    "  --vimrc-name <f>  Custom name for the shared vimrc (default: .vimrc)",
+    "  --vimrc-name <f>  Custom name for the shared vimrc (default: nkm.vimrc)",
   );
-  console.log(
-    "  --editor-name <f> Custom name for the IDE file (.ideavimrc / vscode-keybindings.json by default)",
-  );
+  console.log("  --editor-name <f> Custom name for the IDE file");
   console.log("  --help, -h        Show help");
   console.log("  --version, -v     Show version");
   console.log("");
-  console.log("Compatibility:");
-  console.log("  run <editor> [options] is also accepted.");
+  console.log("Namespace:");
+  console.log("  Outputs are stored in: ~/.config/nvim-keymap-migrator/");
+  console.log("  - .ideavimrc      IdeaVim mappings");
+  console.log("  - .vimrc          Shared pure-Vim mappings");
+  console.log("  - metadata.json   Installation metadata");
+  console.log("");
+  console.log("VS Code:");
+  console.log("  Keybindings are merged directly into settings.json");
+  console.log("  (no separate file in namespace)");
 }
 
 function formatKeyDisplay(value) {
