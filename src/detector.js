@@ -232,7 +232,7 @@ function detectFuzzyDescIntent(desc) {
 
   const rules = [
     { pattern: /\b(find files?|file find)\b/, intent: 'navigation.find_files' },
-    { pattern: /\b(switch buffer|buffers?)\b/, intent: 'navigation.buffers' },
+    { pattern: /\b(switch buffer|buffer list|buffers)\b/, intent: 'navigation.buffers' },
     { pattern: /\b(recent files?)\b/, intent: 'navigation.recent_files' },
     { pattern: /\b(live grep|grep \(root dir\)|grep)\b/, intent: 'navigation.live_grep' },
     { pattern: /\b(search buffer|buffer search)\b/, intent: 'navigation.buffer_search' },
