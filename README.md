@@ -1,6 +1,23 @@
 # nvim-keymap-migrator
 
-A CLI tool that extracts user-defined keymaps from your Neovim configuration and generates mappings for use with vim emulator plugins (IdeaVim, VSCodeVim, etc.).
+A CLI tool that extracts user-defined keymaps from your Neovim configuration and integrates them with vim emulator plugins (IdeaVim, VSCodeVim, etc.).
+
+## Warning
+
+**Back up your files before running this tool!**
+
+This tool modifies the following files:
+
+- `~/.ideavimrc` (IntelliJ/IdeaVim config)
+- VS Code `settings.json` (location varies by platform - see below)
+
+While `--clean` attempts to cleanly remove all changes, **always back up these files** before running:
+
+| Platform | VS Code settings.json                                   |
+| -------- | ------------------------------------------------------- |
+| Linux    | `~/.config/Code/User/settings.json`                     |
+| macOS    | `~/Library/Application Support/Code/User/settings.json` |
+| Windows  | `%APPDATA%/Code/User/settings.json`                     |
 
 ## Why?
 
@@ -21,76 +38,75 @@ npm install -g nvim-keymap-migrator
 ## Usage
 
 ```bash
-nvim-keymap-migrator <command> [options]
-
-Commands:
-  <editor>            Generate output files (vscode or intellij)
-  install <editor>    Install bootstrap hooks for editor
-  uninstall           Remove all bootstrap hooks and namespace
-
-Options:
-  --output <dir>      Output directory for <editor> (default: current folder)
-  --dry-run           Print the translation report without writing files
-  --help, -h          Show help
-  --version, -v       Show version
+nvim-keymap-migrator <editor> [options]
 ```
 
-### Generate Output Files
+### Editors
+
+- `vscode` - Generate and integrate keybindings for VS Code
+- `intellij` - Generate and integrate keybindings for IntelliJ
+
+### Options
+
+- `--dry-run` - Print report without writing files
+- `--clean` - Remove managed keybindings from editor config
+- `--help, -h` - Show help
+- `--version, -v` - Show version
+
+### Examples
 
 ```bash
-nvim-keymap-migrator vscode              # Generate for VS Code
-nvim-keymap-migrator intellij            # Generate for IntelliJ
-nvim-keymap-migrator vscode --dry-run    # Preview without writing
+# Integrate with VS Code
+nvim-keymap-migrator vscode
+
+# Integrate with IntelliJ
+nvim-keymap-migrator intellij
+
+# Preview without making changes
+nvim-keymap-migrator vscode --dry-run
+
+# Remove VS Code keybindings
+nvim-keymap-migrator vscode --clean
+
+# Remove IntelliJ mappings
+nvim-keymap-migrator intellij --clean
 ```
 
-### Install Bootstrap Hooks
+## How It Works
 
-Installs mappings to the namespace and configures the editor to use them:
+### IntelliJ
 
-```bash
-nvim-keymap-migrator install vscode      # VS Code: updates settings.json
-nvim-keymap-migrator install intellij    # IntelliJ: adds source to ~/.ideavimrc
-```
-
-### Uninstall
-
-Removes all bootstrap hooks and deletes the namespace directory:
-
-```bash
-nvim-keymap-migrator uninstall
-```
-
-## Namespace Layout
-
-When using `install`, files are stored in a dedicated namespace:
-
-```
-~/.config/nvim-keymap-migrator/
-  .ideavimrc       IdeaVim action mappings
-  .vimrc           Shared pure-Vim mappings
-  metadata.json    Installation metadata
-```
-
-Note: VS Code keybindings are merged directly into `~/.config/Code/User/settings.json` (no separate file in namespace).
-
-### Bootstrap Blocks
-
-For IdeaVim, a managed block is added to `~/.ideavimrc`:
+Mappings are appended to `~/.ideavimrc` wrapped in markers:
 
 ```vim
-" <<< nvim-keymap-migrator bootstrap start >>>
-" This block is managed by nvim-keymap-migrator.
-" Do not edit manually. Run 'nvim-keybind-migrator uninstall' to remove.
-source ~/.config/nvim-keymap-migrator/.ideavimrc
-" >>> nvim-keymap-migrator bootstrap end <<<
+" <<< nvim-keymap-migrator start >>>
+" Managed by nvim-keymap-migrator. Run with --clean to remove.
+nnoremap <leader>ff <Action>(GotoFile)
+" >>> nvim-keymap-migrator end <<<
 ```
 
-For VS Code, keybindings are merged into settings.json with a marker:
+Re-running replaces the content between markers. Use `--clean` to remove.
+
+### VS Code
+
+Keybindings are merged into `settings.json` with a marker field:
 
 ```json
 "vim.normalModeKeyBindings": [
   { "before": ["<leader>", "f"], "commands": ["workbench.action.quickOpen"], "_managedBy": "nvim-keymap-migrator" }
 ]
+```
+
+Re-running replaces managed keybindings. Use `--clean` to remove them.
+
+## Namespace
+
+A small namespace directory stores shared files:
+
+```
+~/.config/nvim-keymap-migrator/
+  .vimrc           Shared pure-Vim mappings
+  metadata.json    Extraction metadata
 ```
 
 ## What Gets Extracted
@@ -105,23 +121,6 @@ Only **user-defined** keymaps are extracted (not plugin defaults or built-in map
 
 - `<Lua function>` keymaps without a command string are included as comments (vim emulators can't execute arbitrary Lua)
 - Buffer-local keymaps are marked with `<buffer>` - they'll only work in the current buffer
-
-## Development
-
-```bash
-git clone https://github.com/DerekCorniello/nvim-keymap-migrator
-cd nvim-keymap-migrator
-npm install
-npm link  # Makes command available globally
-```
-
-## Linting
-
-```bash
-npm run lint
-```
-
-Runs `prettier --check` over the repo (make sure `npm install` has been run first).
 
 ## License
 
