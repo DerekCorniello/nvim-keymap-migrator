@@ -66,6 +66,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
   }
 
   const mapped = [];
+  const pureVimLines = [];
   const manual = [];
   const seen = new Set();
 
@@ -73,7 +74,32 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     const lhs = readString(keymap.lhs);
     const mode = normalizeMode(keymap.mode);
     const intent = readString(keymap.intent);
-    if (!lhs || !mode || !intent) {
+    if (!lhs || !mode) {
+      continue;
+    }
+
+    // No intent - output as pure Vim mapping (e.g., K, J for native Vim motions)
+    if (!intent) {
+      const opts = readOpts(keymap);
+      const rhs = readRhs(keymap);
+      if (!rhs || rhs === "<Lua function>") {
+        continue;
+      }
+
+      // Use nnoremap for all pure vim mappings (safer for overriding defaults)
+      const mapCmd = "nnoremap";
+      const flags = [];
+      if (truthy(opts.silent)) flags.push("<silent>");
+      if (truthy(opts.expr)) flags.push("<expr>");
+      if (truthy(opts.nowait)) flags.push("<nowait>");
+      if (truthy(opts.buffer)) flags.push("<buffer>");
+
+      const line = `${[mapCmd, ...flags].join(" ")} ${lhs} ${rhs}`;
+      const key = `${mode}|${lhs}|${mapCmd}|${flags.join(",")}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        pureVimLines.push(line);
+      }
       continue;
     }
 
@@ -87,7 +113,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     }
 
     const opts = readOpts(keymap);
-    const mapCmd = pickMapCommand(mode);
+    const mapCmd = pickMapCommand(mode, opts.noremap);
     const flags = [];
     if (truthy(opts.silent)) flags.push("<silent>");
     if (truthy(opts.expr)) flags.push("<expr>");
@@ -115,7 +141,13 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     lines.push("");
   }
 
-  if (mapped.length === 0) {
+  if (pureVimLines.length > 0) {
+    lines.push('" Pure Vim mappings (native Vim motions)');
+    lines.push(...pureVimLines);
+    lines.push("");
+  }
+
+  if (mapped.length === 0 && pureVimLines.length === 0) {
     lines.push('" No IDE-translatable mappings detected.');
   } else {
     lines.push(...mapped);
@@ -123,6 +155,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
 
   lines.push("");
   lines.push(`" Generated actions: ${defaultLines.length + mapped.length}`);
+  lines.push(`" Pure Vim mappings: ${pureVimLines.length}`);
   lines.push(`" Manual mappings: ${manual.length}`);
 
   if (manual.length > 0) {
@@ -143,9 +176,18 @@ function normalizeMode(mode) {
   return mode;
 }
 
-function pickMapCommand(mode) {
+function pickMapCommand(mode, noremap = false) {
   const table = MODE_TO_MAP[mode];
-  return table.map;
+  return noremap ? table.noremap : table.map;
+}
+
+function readRhs(keymap) {
+  const rawRhs = keymap?.raw_rhs;
+  if (typeof rawRhs === "string" && rawRhs.trim()) {
+    return rawRhs.trim();
+  }
+  const rhs = keymap?.rhs;
+  return typeof rhs === "string" ? rhs.trim() : "";
 }
 
 function readString(value) {

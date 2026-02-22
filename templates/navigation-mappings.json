@@ -1,7 +1,7 @@
 {
   "navigation.file_explorer": {
     "vscode": "workbench.action.toggleSidebarVisibility",
-    "intellij": "ProjectViewSwitcher"
+    "intellij": "ActivateProjectToolWindow"
   },
   "navigation.find_files": {
     "vscode": "workbench.action.quickOpen",

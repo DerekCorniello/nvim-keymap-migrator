@@ -4,7 +4,6 @@
     { "lhs": "gD", "mode": "n", "intent": "lsp.declaration" },
     { "lhs": "gr", "mode": "n", "intent": "lsp.references" },
     { "lhs": "gi", "mode": "n", "intent": "lsp.implementation" },
-    { "lhs": "K", "mode": "n", "intent": "lsp.hover" },
     { "lhs": "<C-k>", "mode": "n", "intent": "lsp.signature_help" },
     { "lhs": "[d", "mode": "n", "intent": "lsp.diagnostic_prev" },
     { "lhs": "]d", "mode": "n", "intent": "lsp.diagnostic_next" }

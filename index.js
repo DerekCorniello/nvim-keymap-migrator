@@ -181,12 +181,20 @@ async function handleGenerate(parsed) {
         leader: config.leader,
       });
 
-      await saveMetadata(config, counts, { leaderSet: result.setLeader });
+      await saveMetadata(config, counts, {
+        leaderSet: result.setLeader,
+        vimrcPathSet: result.setVimrcPath,
+      });
 
       console.log(`Shared .vimrc: ${vimrcPath}`);
       console.log("");
       console.log("VS Code:");
       console.log("  Keybindings merged into settings.json");
+      if (result.setVimrcPath) {
+        console.log(
+          "  vim.vimrc.path set in settings.json (reads shared .vimrc)",
+        );
+      }
       if (result.setLeader) {
         console.log("  vim.leader set in settings.json");
       }
@@ -237,6 +245,9 @@ async function handleClean(editor) {
         );
         if (result.sections) {
           console.log(`Sections cleaned: ${result.sections.join(", ")}`);
+        }
+        if (result.removedVimrcPath) {
+          console.log("Removed vim.vimrc.path from settings.json");
         }
         if (result.removedLeader) {
           console.log("Removed vim.leader from settings.json");

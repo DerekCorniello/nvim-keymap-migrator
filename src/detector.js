@@ -228,6 +228,20 @@ function detectSourceIntent({ lhs, rhsSource, desc }) {
   const source = (rhsSource || "").toLowerCase();
   const key = lhs || "";
 
+  // Detect common keymaps by LHS regardless of source (works around vim.cmd.Ex issue)
+  const commonKeymaps = {
+    "<leader>pv": "navigation.file_explorer",
+    "<leader>G": "git.fugitive",
+    "<leader>gp": "git.push",
+    "<leader>gP": "git.pull",
+    "<leader>gac": "git.add",
+    "<leader>gc": "git.commit",
+    "<leader>gs": "git.status",
+  };
+  if (commonKeymaps[key]) {
+    return commonKeymaps[key];
+  }
+
   if (source.includes("/core/plugins/harpoon.lua")) {
     return detectHarpoonByLhs(key);
   }
@@ -249,6 +263,7 @@ function detectSourceIntent({ lhs, rhsSource, desc }) {
 
 function detectCoreKeymapsByLhs(lhs) {
   const table = {
+    "<leader>pv": "navigation.file_explorer",
     "<leader>G": "git.fugitive",
     "<leader>gp": "git.push",
     "<leader>gP": "git.pull",
