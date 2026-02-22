@@ -1,4 +1,4 @@
-// Intent detection pipeline (Step 2 in PLAN.md).
+// intent detection pipeline
 
 const COMMAND_INTENTS = [
   { pattern: /^:?Ex!?$/, intent: "navigation.file_explorer" },
@@ -228,7 +228,7 @@ function detectSourceIntent({ lhs, rhsSource, desc }) {
   const source = (rhsSource || "").toLowerCase();
   const key = lhs || "";
 
-  // Detect common keymaps by LHS regardless of source (works around vim.cmd.Ex issue)
+  // detect common keymaps by lhs regardless of source
   const commonKeymaps = {
     "<leader>pv": "navigation.file_explorer",
     "<leader>G": "git.fugitive",

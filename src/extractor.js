@@ -1,4 +1,4 @@
-// Extraction: runtime-first monkey-patch capture with strict-mode fallback.
+// extraction runtime-first monkey-patch capture with strict-mode fallback
 
 import { spawn } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";

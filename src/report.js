@@ -1,4 +1,4 @@
-// Translation report generator (Step 9 in PLAN.md).
+// translation report generator
 
 function formatKeymap(item) {
   return `${item.lhs ?? "<unknown>"} -> ${item.command ?? item.intent ?? item.raw_rhs ?? "??"}`;

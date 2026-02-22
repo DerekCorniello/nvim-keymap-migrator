@@ -1,32 +1,5 @@
-// IntelliJ/IdeaVim generation (Step 7 in PLAN.md).
-
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { loadMappings, lookupIntent } from "../registry.js";
-
-const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const TEMPLATES_DIR = join(ROOT, "templates");
-
-function loadDefaults() {
-  try {
-    const raw = readFileSync(join(TEMPLATES_DIR, "defaults.json"), "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return { keymaps: [] };
-  }
-}
-
-const MODE_TO_MAP = {
-  n: { noremap: "nnoremap", map: "nmap" },
-  i: { noremap: "inoremap", map: "imap" },
-  v: { noremap: "vnoremap", map: "vmap" },
-  x: { noremap: "xnoremap", map: "xmap" },
-  s: { noremap: "snoremap", map: "smap" },
-  o: { noremap: "onoremap", map: "omap" },
-  c: { noremap: "cnoremap", map: "cmap" },
-  t: { noremap: "tnoremap", map: "tmap" },
-};
+import { loadDefaults, MODE_TO_MAP, readString, truthy } from "../utils.js";
 
 export function generateIdeaVimrc(keymaps = [], options = {}) {
   const registry = options.registry ?? loadMappings();
@@ -78,7 +51,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
       continue;
     }
 
-    // No intent - output as pure Vim mapping (e.g., K, J for native Vim motions)
+    // no intent - output as pure vim mapping
     if (!intent) {
       const opts = readOpts(keymap);
       const rhs = readRhs(keymap);
@@ -86,7 +59,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
         continue;
       }
 
-      // Use nnoremap for all pure vim mappings (safer for overriding defaults)
+      // use nnoremap for all pure vim mappings
       const mapCmd = "nnoremap";
       const flags = [];
       if (truthy(opts.silent)) flags.push("<silent>");
@@ -190,10 +163,6 @@ function readRhs(keymap) {
   return typeof rhs === "string" ? rhs.trim() : "";
 }
 
-function readString(value) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function readOpts(keymap) {
   if (keymap && keymap.opts && typeof keymap.opts === "object") {
     return keymap.opts;
@@ -206,8 +175,4 @@ function readOpts(keymap) {
     nowait: keymap?.nowait,
     expr: keymap?.expr,
   };
-}
-
-function truthy(value) {
-  return value === true || value === 1;
 }

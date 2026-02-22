@@ -1,4 +1,4 @@
-// Shared vimrc generation (Step 6 in PLAN.md).
+import { MODE_TO_MAP, truthy } from "../utils.js";
 
 const EXCLUDED_INTENT_PREFIXES = [
   "lsp.",
@@ -7,17 +7,6 @@ const EXCLUDED_INTENT_PREFIXES = [
   "todo.",
   "plugin.",
 ];
-
-const MODE_TO_MAP = {
-  n: { noremap: "nnoremap", map: "nmap" },
-  i: { noremap: "inoremap", map: "imap" },
-  v: { noremap: "vnoremap", map: "vmap" },
-  x: { noremap: "xnoremap", map: "xmap" },
-  s: { noremap: "snoremap", map: "smap" },
-  o: { noremap: "onoremap", map: "omap" },
-  c: { noremap: "cnoremap", map: "cmap" },
-  t: { noremap: "tnoremap", map: "tmap" },
-};
 
 export function generateVimrc(keymaps = []) {
   const lines = [
@@ -122,10 +111,6 @@ function getOpts(keymap) {
 function shouldExcludeIntent(intent) {
   if (!intent) return false;
   return EXCLUDED_INTENT_PREFIXES.some((prefix) => intent.startsWith(prefix));
-}
-
-function truthy(value) {
-  return value === true || value === 1;
 }
 
 export function isPureVimMapping(keymap) {

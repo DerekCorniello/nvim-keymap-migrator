@@ -1,21 +1,5 @@
-// VS Code keybindings generation (Step 8 in PLAN.md).
-
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { loadMappings, lookupIntent } from "../registry.js";
-
-const ROOT = fileURLToPath(new URL("../..", import.meta.url));
-const TEMPLATES_DIR = join(ROOT, "templates");
-
-function loadDefaults() {
-  try {
-    const raw = readFileSync(join(TEMPLATES_DIR, "defaults.json"), "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return { keymaps: [] };
-  }
-}
+import { loadDefaults, readString } from "../utils.js";
 
 export const MANAGED_BY_MARKER = "nvim-keymap-migrator";
 
@@ -138,10 +122,6 @@ function normalizeMode(mode) {
     return null;
   }
   return mode;
-}
-
-function readString(value) {
-  return typeof value === "string" ? value.trim() : "";
 }
 
 function toBeforeTokens(lhs) {
