@@ -112,11 +112,17 @@ VS Code uses a two-pronged approach:
 ]
 ```
 
-2. **Pure Vim mappings** - Written to a shared `.vimrc` file, configured via `vim.vimrc.path`:
+2. **Pure Vim mappings** - Written to a shared `.vimrc` file, configured via `vim.vimrc.path` and `vim.vimrc.enable`:
 
 ```json
-"vim.vimrc.path": "~/.config/nvim-keymap-migrator/.vimrc"
+"vim.vimrc.path": "~/.config/nvim-keymap-migrator/.vimrc",
+"vim.vimrc.enable": true
 ```
+
+The tool manages both settings:
+
+- `vim.vimrc.path` - Set to point to the shared .vimrc
+- `vim.vimrc.enable` - Set to `true` only if unset (respects existing user values)
 
 Re-running replaces managed keybindings. Use `--clean` to remove them.
 

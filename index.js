@@ -184,6 +184,7 @@ async function handleGenerate(parsed) {
       await saveMetadata(config, counts, {
         leaderSet: result.setLeader,
         vimrcPathSet: result.setVimrcPath,
+        vimrcEnableSet: result.setVimrcEnable,
       });
 
       console.log(`Shared .vimrc: ${vimrcPath}`);
@@ -193,6 +194,11 @@ async function handleGenerate(parsed) {
       if (result.setVimrcPath) {
         console.log(
           "  vim.vimrc.path set in settings.json (reads shared .vimrc)",
+        );
+      }
+      if (result.setVimrcEnable) {
+        console.log(
+          "  vim.vimrc.enable set in settings.json (loads shared .vimrc)",
         );
       }
       if (result.setLeader) {
@@ -248,6 +254,9 @@ async function handleClean(editor) {
         }
         if (result.removedVimrcPath) {
           console.log("Removed vim.vimrc.path from settings.json");
+        }
+        if (result.removedVimrcEnable) {
+          console.log("Removed vim.vimrc.enable from settings.json");
         }
         if (result.removedLeader) {
           console.log("Removed vim.leader from settings.json");
