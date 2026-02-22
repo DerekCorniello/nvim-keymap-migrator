@@ -92,8 +92,8 @@ async function handleGenerate(parsed) {
     const registry = loadMappings();
 
     if (intents.length === 0) {
-      console.log("No user-defined keymaps found in your Neovim config.");
-      console.log("Nothing to write.");
+      console.log(`No user-defined keymaps found in your Neovim config.
+Nothing to write.`);
       return;
     }
 
@@ -151,11 +151,12 @@ async function handleGenerate(parsed) {
     const vimrcPath = getRcPath("neovim");
     await writeFile(vimrcPath, vimrcText, "utf8");
 
-    console.log("=== nvim-keymap-migrator ===");
-    console.log(`Editor: ${parsed.editor}`);
-    console.log(`Config: ${config.config_path}`);
-    console.log(`Leader: ${leaderLabel}`);
-    console.log("");
+    console.log(`=== nvim-keymap-migrator ===
+Editor: ${parsed.editor}
+Config: ${config.config_path}
+Leader: ${leaderLabel}
+
+`);
 
     if (parsed.editor === "intellij") {
       const ideaVimrcResult = generateIdeaVimrc(intents, { registry });
@@ -167,14 +168,11 @@ async function handleGenerate(parsed) {
 
       await saveMetadata(config, counts);
 
-      console.log(`Shared .vimrc: ${vimrcPath}`);
-      console.log("");
-      console.log("IntelliJ:");
-      console.log("  Mappings appended to ~/.ideavimrc");
-      if (result.updated) {
-        console.log("  (replaced previous mappings)");
-      }
-      console.log(`  Defaults added: ${ideaDefaults}`);
+      console.log(`Shared .vimrc: ${vimrcPath}
+
+IntelliJ:
+  Mappings appended to ~/.ideavimrc${result.updated ? "\n  (replaced previous mappings)" : ""}
+  Defaults added: ${ideaDefaults}`);
     } else if (parsed.editor === "vscode") {
       const vscodeBindings = generateVSCodeBindings(intents, { registry });
       const result = await integrateVSCode(vscodeBindings, {
@@ -187,41 +185,42 @@ async function handleGenerate(parsed) {
         vimrcEnableSet: result.setVimrcEnable,
       });
 
-      console.log(`Shared .vimrc: ${vimrcPath}`);
-      console.log("");
-      console.log("VS Code:");
-      console.log("  Keybindings merged into settings.json");
+      let vscodeOutput = `Shared .vimrc: ${vimrcPath}
+
+VS Code:
+  Keybindings merged into settings.json`;
+
       if (result.setVimrcPath) {
-        console.log(
-          "  vim.vimrc.path set in settings.json (reads shared .vimrc)",
-        );
+        vscodeOutput +=
+          "\n  vim.vimrc.path set in settings.json (reads shared .vimrc)";
       }
       if (result.setVimrcEnable) {
-        console.log(
-          "  vim.vimrc.enable set in settings.json (loads shared .vimrc)",
-        );
+        vscodeOutput +=
+          "\n  vim.vimrc.enable set in settings.json (loads shared .vimrc)";
       }
       if (result.setLeader) {
-        console.log("  vim.leader set in settings.json");
+        vscodeOutput += "\n  vim.leader set in settings.json";
       }
       if (result.sections) {
-        console.log(`  Sections: ${result.sections.join(", ")}`);
+        vscodeOutput += `\n  Sections: ${result.sections.join(", ")}`;
       }
       if (result.warnings) {
         for (const w of result.warnings) {
-          console.log(`  ${w}`);
+          vscodeOutput += `\n  ${w}`;
         }
       }
       const vsDefaults = vscodeBindings._meta?.defaultsAdded ?? 0;
-      console.log(`  Defaults added: ${vsDefaults}`);
+      vscodeOutput += `\n  Defaults added: ${vsDefaults}`;
+
+      console.log(vscodeOutput);
     }
 
-    console.log("");
-    console.log(`Total keymaps: ${counts.total}`);
-    console.log(`Translated: ${counts.translated}`);
-    console.log(`Pure Vim: ${counts.pureVim}`);
-    console.log(`Manual review: ${counts.manual}`);
-    console.log(`Unsupported: ${counts.unsupported}`);
+    console.log(`
+Total keymaps: ${counts.total}
+Translated: ${counts.translated}
+Pure Vim: ${counts.pureVim}
+Manual review: ${counts.manual}
+Unsupported: ${counts.unsupported}`);
 
     printDetectionWarnings(config, extracted);
   } catch (error) {
@@ -232,9 +231,10 @@ async function handleGenerate(parsed) {
 
 async function handleClean(editor) {
   try {
-    console.log("=== nvim-keymap-migrator --clean ===");
-    console.log(`Editor: ${editor}`);
-    console.log("");
+    console.log(`=== nvim-keymap-migrator --clean ===
+Editor: ${editor}
+
+`);
 
     if (editor === "intellij") {
       const result = await cleanIdeaVim();
@@ -246,21 +246,20 @@ async function handleClean(editor) {
     } else if (editor === "vscode") {
       const result = await cleanVSCode();
       if (result.cleaned) {
-        console.log(
-          `Removed ${result.removed} keybinding(s) from settings.json`,
-        );
+        let output = `Removed ${result.removed} keybinding(s) from settings.json`;
         if (result.sections) {
-          console.log(`Sections cleaned: ${result.sections.join(", ")}`);
+          output += `\nSections cleaned: ${result.sections.join(", ")}`;
         }
         if (result.removedVimrcPath) {
-          console.log("Removed vim.vimrc.path from settings.json");
+          output += "\nRemoved vim.vimrc.path from settings.json";
         }
         if (result.removedVimrcEnable) {
-          console.log("Removed vim.vimrc.enable from settings.json");
+          output += "\nRemoved vim.vimrc.enable from settings.json";
         }
         if (result.removedLeader) {
-          console.log("Removed vim.leader from settings.json");
+          output += "\nRemoved vim.leader from settings.json";
         }
+        console.log(output);
       } else {
         console.log("No managed keybindings found in settings.json");
       }
@@ -329,43 +328,32 @@ function parseArgs(argv) {
 
 function printHelp(error) {
   if (error) {
-    console.error(error);
-    console.error("");
+    console.error(error + "\n");
   }
 
-  console.log(`Usage: ${pkg.bin["nvim-keybind-migrator"]} <editor> [options]`);
-  console.log("");
-  console.log("Editors:");
-  console.log(
-    "  vscode             Generate and integrate keybindings for VS Code",
-  );
-  console.log(
-    "  intellij           Generate and integrate keybindings for IntelliJ",
-  );
-  console.log("");
-  console.log("Options:");
-  console.log("  --dry-run          Print report without writing files");
-  console.log(
-    "  --clean            Remove managed keybindings from editor config",
-  );
-  console.log("  --help, -h         Show help");
-  console.log("  --version, -v      Show version");
-  console.log("");
-  console.log("Examples:");
-  console.log("  nvim-keybind-migrator vscode        # Integrate with VS Code");
-  console.log(
-    "  nvim-keybind-migrator intellij      # Integrate with IntelliJ",
-  );
-  console.log(
-    "  nvim-keybind-migrator vscode --dry-run  # Preview without changes",
-  );
-  console.log(
-    "  nvim-keybind-migrator vscode --clean    # Remove VS Code keybindings",
-  );
-  console.log("");
-  console.log("Files modified:");
-  console.log("  IntelliJ: ~/.ideavimrc");
-  console.log("  VS Code:  settings.json (platform-specific path)");
+  const help = `Usage: ${pkg.bin["nvim-keymap-migrator"]} <editor> [options]
+
+Editors:
+  vscode             Generate and integrate keybindings for VS Code
+  intellij           Generate and integrate keybindings for IntelliJ
+
+Options:
+  --dry-run          Print report without writing files
+  --clean            Remove managed keybindings from editor config
+  --help, -h         Show help
+  --version, -v      Show version
+
+Examples:
+  nvim-keymap-migrator vscode        # Integrate with VS Code
+  nvim-keymap-migrator intellij      # Integrate with IntelliJ
+  nvim-keymap-migrator vscode --dry-run  # Preview without changes
+  nvim-keymap-migrator vscode --clean    # Remove VS Code keybindings
+
+Files modified:
+  IntelliJ: ~/.ideavimrc
+  VS Code:  settings.json (platform-specific path)`;
+
+  console.log(help);
 }
 
 function formatKeyDisplay(value) {

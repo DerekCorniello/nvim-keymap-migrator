@@ -106,14 +106,14 @@ export function generateVSCodeBindings(keymaps = [], options = {}) {
   return {
     ...sections,
     _meta: {
-    generated: Object.values(sections).reduce(
-      (sum, list) => sum + list.length,
-      0,
-    ),
-    defaultsAdded,
-    manual: manual.length,
-    manual_examples: manual.slice(0, 20),
-  },
+      generated: Object.values(sections).reduce(
+        (sum, list) => sum + list.length,
+        0,
+      ),
+      defaultsAdded,
+      manual: manual.length,
+      manual_examples: manual.slice(0, 20),
+    },
   };
 }
 

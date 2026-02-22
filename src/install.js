@@ -1,8 +1,15 @@
 import { readFile, writeFile, access, mkdir, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir, platform } from "node:os";
-import { ensureNamespaceDir, readMetadata, writeMetadata } from "./namespace.js";
-import { MANAGED_BY_MARKER, VIM_KEYBINDING_SECTIONS } from "./generators/vscode.js";
+import {
+  ensureNamespaceDir,
+  readMetadata,
+  writeMetadata,
+} from "./namespace.js";
+import {
+  MANAGED_BY_MARKER,
+  VIM_KEYBINDING_SECTIONS,
+} from "./generators/vscode.js";
 
 const MARKER_START = '" <<< nvim-keymap-migrator start >>>';
 const MARKER_END = '" >>> nvim-keymap-migrator end <<<';
@@ -36,7 +43,10 @@ function getVSCodeSettingsPath() {
   const p = platform();
 
   if (p === "darwin") {
-    return join(homedir(), "Library/Application Support/Code/User/settings.json");
+    return join(
+      homedir(),
+      "Library/Application Support/Code/User/settings.json",
+    );
   }
 
   if (p === "win32") {
@@ -105,7 +115,9 @@ function extractManagedBlock(content) {
 }
 
 function buildManagedBlock(mappings, leader) {
-  const leaderLine = leader ? `let mapleader = "${leaderToIdeaVimFormat(leader)}"` : "";
+  const leaderLine = leader
+    ? `let mapleader = "${leaderToIdeaVimFormat(leader)}"`
+    : "";
   const leaderSection = leaderLine ? `${leaderLine}\n\n` : "";
 
   return `${MARKER_START}
@@ -271,7 +283,10 @@ async function cleanVSCode() {
     removedVimrcPath = true;
   }
 
-  if (metadata?.vimrc_enable_set && existing["vim.vimrc.enable"] !== undefined) {
+  if (
+    metadata?.vimrc_enable_set &&
+    existing["vim.vimrc.enable"] !== undefined
+  ) {
     delete existing["vim.vimrc.enable"];
     removedVimrcEnable = true;
   }
@@ -297,7 +312,12 @@ async function cleanVSCode() {
     }
   }
 
-  if (totalRemoved === 0 && !removedLeader && !removedVimrcPath && !removedVimrcEnable) {
+  if (
+    totalRemoved === 0 &&
+    !removedLeader &&
+    !removedVimrcPath &&
+    !removedVimrcEnable
+  ) {
     return { cleaned: false, reason: "no_managed_bindings" };
   }
 
@@ -326,8 +346,10 @@ async function saveMetadata(config, counts, options = {}) {
         updated_at: new Date().toISOString(),
         leader: config.leader ?? "\\",
         leader_set: options.leaderSet ?? existing.leader_set ?? false,
-        vimrc_path_set: options.vimrcPathSet ?? existing.vimrc_path_set ?? false,
-        vimrc_enable_set: options.vimrcEnableSet ?? existing.vimrc_enable_set ?? false,
+        vimrc_path_set:
+          options.vimrcPathSet ?? existing.vimrc_path_set ?? false,
+        vimrc_enable_set:
+          options.vimrcEnableSet ?? existing.vimrc_enable_set ?? false,
         config_path: config.config_path ?? null,
         counts,
       }

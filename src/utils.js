@@ -33,11 +33,4 @@ function loadDefaults() {
   }
 }
 
-export {
-  ROOT,
-  TEMPLATES_DIR,
-  MODE_TO_MAP,
-  truthy,
-  readString,
-  loadDefaults,
-};
+export { ROOT, TEMPLATES_DIR, MODE_TO_MAP, truthy, readString, loadDefaults };
