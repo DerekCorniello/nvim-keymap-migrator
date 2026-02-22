@@ -4,7 +4,7 @@ A CLI tool that extracts user-defined keymaps from your Neovim configuration and
 
 ## Warning
 
-**Back up your files before running this tool!**
+**Back up your files before running this tool!**. This tool was made for me, so it may have unintended consequences on your setup. Always review the changes it proposes before applying them.
 
 This tool modifies the following files:
 
@@ -33,6 +33,7 @@ npm install -g nvim-keymap-migrator
 
 - Node.js 18+
 - Neovim 0.8+ (for `vim.keymap.set` and `vim.api.nvim_get_keymap`)
+- Editor with a Vim emulator plugin (e.g., IdeaVim for IntelliJ, VSCodeVim for VS Code)
 - Your Neovim config must be loadable via `nvim --headless`
 
 ## Usage
@@ -77,7 +78,7 @@ nvim-keymap-migrator intellij --clean
 The tool extracts keymaps from your Neovim config and categorizes them:
 
 1. **IDE actions** - Keymaps that can be translated to IDE-specific actions (e.g., LSP, file explorer)
-2. **Pure Vim mappings** - Native Vim keymaps that work in any Vim emulator (e.g., `K`, `J`, `<leader>pv`)
+2. **Pure Vim mappings** - Native Vim keymaps that work in any Vim emulator
 3. **Plugin mappings** - Keymaps from plugins (require manual configuration)
 4. **Unsupported** - Keymaps that couldn't be categorized
 
@@ -169,11 +170,7 @@ The tool detects and translates these keymap intents:
 
 ### Pure Vim Mappings
 
-Native Vim motions and commands are detected and output as pure Vim mappings:
-
-- `K` / `J` - Move lines up/down
-- `<leader>pv` - File explorer (uses IDE action)
-- Any keymap with Vim commands (`:m`, `gz`, etc.)
+Native Vim motions and commands are detected and output as pure Vim mappings, so any mapping from one Vim command to another is included here.
 
 These work out of the box in any Vim emulator.
 
