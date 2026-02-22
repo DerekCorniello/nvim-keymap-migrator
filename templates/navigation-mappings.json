@@ -33,7 +33,7 @@
   },
   "navigation.buffer_search": {
     "vscode": "editor.actions.findWithArgs",
-    "intellij": "FindInFile"
+    "intellij": "Find"
   },
   "navigation.resume_search": {
     "vscode": "workbench.action.quickOpenNavigateNext",

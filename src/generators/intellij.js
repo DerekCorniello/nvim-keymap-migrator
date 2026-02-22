@@ -1,6 +1,21 @@
 // IntelliJ/IdeaVim generation (Step 7 in PLAN.md).
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadMappings, lookupIntent } from "../registry.js";
+
+const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+const TEMPLATES_DIR = join(ROOT, "templates");
+
+function loadDefaults() {
+  try {
+    const raw = readFileSync(join(TEMPLATES_DIR, "defaults.json"), "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return { keymaps: [] };
+  }
+}
 
 const MODE_TO_MAP = {
   n: { noremap: "nnoremap", map: "nmap" },
@@ -15,6 +30,41 @@ const MODE_TO_MAP = {
 
 export function generateIdeaVimrc(keymaps = [], options = {}) {
   const registry = options.registry ?? loadMappings();
+  const defaults = loadDefaults();
+  const defaultKeymaps = Array.isArray(defaults.keymaps)
+    ? defaults.keymaps
+    : [];
+
+  const userBindings = new Set();
+  for (const keymap of keymaps) {
+    const mode = normalizeMode(keymap.mode);
+    const lhs = readString(keymap.lhs);
+    if (!mode || !lhs) {
+      continue;
+    }
+    userBindings.add(`${mode}|${lhs}`);
+  }
+
+  const defaultLines = [];
+  let defaultsAdded = 0;
+  for (const def of defaultKeymaps) {
+    const mode = normalizeMode(def.mode);
+    const lhs = readString(def.lhs);
+    if (!mode || !lhs) continue;
+    if (userBindings.has(`${mode}|${lhs}`)) {
+      continue;
+    }
+
+    const intent = readString(def.intent);
+    const action = lookupIntent(intent, "intellij", registry);
+    if (!action) continue;
+
+    const mapCmd = pickMapCommand(mode);
+    const line = `${mapCmd} ${def.lhs} <Action>(${action})`;
+    defaultLines.push(line);
+    defaultsAdded += 1;
+  }
+
   const mapped = [];
   const manual = [];
   const seen = new Set();
@@ -37,7 +87,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     }
 
     const opts = readOpts(keymap);
-    const mapCmd = pickMapCommand(mode, opts.noremap);
+    const mapCmd = pickMapCommand(mode);
     const flags = [];
     if (truthy(opts.silent)) flags.push("<silent>");
     if (truthy(opts.expr)) flags.push("<expr>");
@@ -59,6 +109,12 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     "",
   ];
 
+  if (defaultLines.length > 0) {
+    lines.push('" Default LSP keymaps (from Neovim defaults)');
+    lines.push(...defaultLines);
+    lines.push("");
+  }
+
   if (mapped.length === 0) {
     lines.push('" No IDE-translatable mappings detected.');
   } else {
@@ -66,7 +122,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
   }
 
   lines.push("");
-  lines.push(`" Generated actions: ${mapped.length}`);
+  lines.push(`" Generated actions: ${defaultLines.length + mapped.length}`);
   lines.push(`" Manual mappings: ${manual.length}`);
 
   if (manual.length > 0) {
@@ -76,7 +132,8 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     }
   }
 
-  return `${lines.join("\n")}\n`;
+  const text = `${lines.join("\n")}\n`;
+  return { text, defaultsAdded };
 }
 
 function normalizeMode(mode) {
@@ -86,9 +143,9 @@ function normalizeMode(mode) {
   return mode;
 }
 
-function pickMapCommand(mode, noremap) {
+function pickMapCommand(mode) {
   const table = MODE_TO_MAP[mode];
-  return truthy(noremap) ? table.noremap : table.map;
+  return table.map;
 }
 
 function readString(value) {
@@ -102,7 +159,7 @@ function readOpts(keymap) {
 
   return {
     silent: keymap?.silent,
-    noremap: keymap?.noremap ?? true,
+    noremap: keymap?.noremap ?? false,
     buffer: keymap?.buffer,
     nowait: keymap?.nowait,
     expr: keymap?.expr,

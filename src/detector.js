@@ -81,6 +81,7 @@ const RAW_PATTERN_INTENTS = [
   { pattern: /harpoon\.ui:toggle_quick_menu/, intent: "harpoon.menu" },
   { pattern: /todo-comments\.jump_next/, intent: "todo.next" },
   { pattern: /todo-comments\.jump_prev/, intent: "todo.prev" },
+  { pattern: /vim\.cmd\.Ex\b/, intent: "navigation.file_explorer" },
 ];
 
 const DESC_ALIAS = {

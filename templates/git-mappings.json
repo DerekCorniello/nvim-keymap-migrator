@@ -5,7 +5,7 @@
   },
   "git.status": {
     "vscode": "git.openChange",
-    "intellij": "ChangesView"
+    "intellij": "ActivateVersionControlToolWindow"
   },
   "git.push": {
     "vscode": "git.push",
@@ -17,7 +17,7 @@
   },
   "git.commit": {
     "vscode": "git.commit",
-    "intellij": "CheckinProject"
+    "intellij": "ActivateCommitToolWindow"
   },
   "git.add": {
     "vscode": "git.stage",

@@ -41,6 +41,12 @@ function checkNeovimAvailable() {
 async function main(argv) {
   const parsed = parseArgs(argv);
 
+  if (parsed.error) {
+    printHelp(parsed.error);
+    process.exitCode = 1;
+    return;
+  }
+
   if (parsed.help) {
     printHelp();
     return;
@@ -145,8 +151,6 @@ async function handleGenerate(parsed) {
     const vimrcPath = getRcPath("neovim");
     await writeFile(vimrcPath, vimrcText, "utf8");
 
-    await saveMetadata(config, counts);
-
     console.log("=== nvim-keymap-migrator ===");
     console.log(`Editor: ${parsed.editor}`);
     console.log(`Config: ${config.config_path}`);
@@ -154,8 +158,14 @@ async function handleGenerate(parsed) {
     console.log("");
 
     if (parsed.editor === "intellij") {
-      const ideaVimrcText = generateIdeaVimrc(intents, { registry });
-      const result = await integrateIdeaVim(ideaVimrcText);
+      const ideaVimrcResult = generateIdeaVimrc(intents, { registry });
+      const ideaVimrcText = ideaVimrcResult.text;
+      const ideaDefaults = ideaVimrcResult.defaultsAdded ?? 0;
+      const result = await integrateIdeaVim(ideaVimrcText, {
+        leader: config.leader,
+      });
+
+      await saveMetadata(config, counts);
 
       console.log(`Shared .vimrc: ${vimrcPath}`);
       console.log("");
@@ -164,14 +174,22 @@ async function handleGenerate(parsed) {
       if (result.updated) {
         console.log("  (replaced previous mappings)");
       }
+      console.log(`  Defaults added: ${ideaDefaults}`);
     } else if (parsed.editor === "vscode") {
       const vscodeBindings = generateVSCodeBindings(intents, { registry });
-      const result = await integrateVSCode(vscodeBindings);
+      const result = await integrateVSCode(vscodeBindings, {
+        leader: config.leader,
+      });
+
+      await saveMetadata(config, counts, { leaderSet: result.setLeader });
 
       console.log(`Shared .vimrc: ${vimrcPath}`);
       console.log("");
       console.log("VS Code:");
       console.log("  Keybindings merged into settings.json");
+      if (result.setLeader) {
+        console.log("  vim.leader set in settings.json");
+      }
       if (result.sections) {
         console.log(`  Sections: ${result.sections.join(", ")}`);
       }
@@ -180,6 +198,8 @@ async function handleGenerate(parsed) {
           console.log(`  ${w}`);
         }
       }
+      const vsDefaults = vscodeBindings._meta?.defaultsAdded ?? 0;
+      console.log(`  Defaults added: ${vsDefaults}`);
     }
 
     console.log("");
@@ -218,6 +238,9 @@ async function handleClean(editor) {
         if (result.sections) {
           console.log(`Sections cleaned: ${result.sections.join(", ")}`);
         }
+        if (result.removedLeader) {
+          console.log("Removed vim.leader from settings.json");
+        }
       } else {
         console.log("No managed keybindings found in settings.json");
       }
@@ -235,6 +258,7 @@ function parseArgs(argv) {
     dryRun: false,
     clean: false,
     editor: null,
+    error: null,
   };
 
   const tokens = [...argv];
@@ -270,6 +294,14 @@ function parseArgs(argv) {
       flags.editor = arg;
       continue;
     }
+
+    if (arg.startsWith("-")) {
+      flags.error = `Unknown option: ${arg}`;
+      return flags;
+    }
+
+    flags.error = `Unknown argument: ${arg}`;
+    return flags;
   }
 
   return flags;

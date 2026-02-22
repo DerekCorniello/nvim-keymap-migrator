@@ -1,6 +1,21 @@
 // VS Code keybindings generation (Step 8 in PLAN.md).
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadMappings, lookupIntent } from "../registry.js";
+
+const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+const TEMPLATES_DIR = join(ROOT, "templates");
+
+function loadDefaults() {
+  try {
+    const raw = readFileSync(join(TEMPLATES_DIR, "defaults.json"), "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return { keymaps: [] };
+  }
+}
 
 export const MANAGED_BY_MARKER = "nvim-keymap-migrator";
 
@@ -20,11 +35,52 @@ export const VIM_KEYBINDING_SECTIONS = [
 
 export function generateVSCodeBindings(keymaps = [], options = {}) {
   const registry = options.registry ?? loadMappings();
+  const defaults = loadDefaults();
+  const defaultKeymaps = Array.isArray(defaults.keymaps)
+    ? defaults.keymaps
+    : [];
+  let defaultsAdded = 0;
   const sections = {
     "vim.normalModeKeyBindings": [],
     "vim.visualModeKeyBindings": [],
     "vim.insertModeKeyBindings": [],
   };
+
+  const userBindings = new Set();
+  for (const keymap of keymaps) {
+    const intent = readString(keymap.intent);
+    if (intent) {
+      const mode = normalizeMode(keymap.mode);
+      const lhs = readString(keymap.lhs);
+      if (mode && lhs) {
+        userBindings.add(`${mode}|${lhs}`);
+      }
+    }
+  }
+
+  for (const def of defaultKeymaps) {
+    const mode = normalizeMode(def.mode);
+    const lhs = readString(def.lhs);
+    if (!mode || !lhs) continue;
+    if (userBindings.has(`${mode}|${lhs}`)) {
+      continue;
+    }
+
+    const intent = readString(def.intent);
+    const command = lookupIntent(intent, "vscode", registry);
+    if (!command) continue;
+
+    const before = toBeforeTokens(lhs);
+    if (before.length === 0) continue;
+
+    const section = MODE_TO_SECTION[mode];
+    sections[section].push({
+      before,
+      commands: [command],
+      _managedBy: MANAGED_BY_MARKER,
+    });
+    defaultsAdded += 1;
+  }
 
   const seen = new Set();
   const manual = [];
@@ -59,20 +115,21 @@ export function generateVSCodeBindings(keymaps = [], options = {}) {
     sections[section].push({
       before,
       commands: [command],
-      _managedBy: "nvim-keymap-migrator",
+      _managedBy: MANAGED_BY_MARKER,
     });
   }
 
   return {
     ...sections,
     _meta: {
-      generated: Object.values(sections).reduce(
-        (sum, list) => sum + list.length,
-        0,
-      ),
-      manual: manual.length,
-      manual_examples: manual.slice(0, 20),
-    },
+    generated: Object.values(sections).reduce(
+      (sum, list) => sum + list.length,
+      0,
+    ),
+    defaultsAdded,
+    manual: manual.length,
+    manual_examples: manual.slice(0, 20),
+  },
   };
 }
 
