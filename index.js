@@ -4,6 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
 import { extractKeymaps } from "./src/extractor.js";
 import { detectConfig } from "./src/config.js";
 import { detectIntents } from "./src/detector.js";
@@ -28,6 +29,14 @@ const pkg = JSON.parse(readFileSync(join(__dirname, "package.json"), "utf8"));
 const args = process.argv.slice(2);
 
 await main(args);
+
+function checkNeovimAvailable() {
+  return new Promise((resolve) => {
+    const proc = spawn("nvim", ["--version"], { stdio: "ignore" });
+    proc.on("error", () => resolve(false));
+    proc.on("close", (code) => resolve(code === 0));
+  });
+}
 
 async function main(argv) {
   const parsed = parseArgs(argv);
@@ -64,10 +73,23 @@ async function main(argv) {
 
 async function handleGenerate(parsed) {
   try {
+    const nvimAvailable = await checkNeovimAvailable();
+    if (!nvimAvailable) {
+      console.error("Error: Neovim not found. Please install Neovim 0.8+");
+      process.exitCode = 1;
+      return;
+    }
+
     const config = await detectConfig();
     const extracted = await extractKeymaps();
     const intents = detectIntents(extracted);
     const registry = loadMappings();
+
+    if (intents.length === 0) {
+      console.log("No user-defined keymaps found in your Neovim config.");
+      console.log("Nothing to write.");
+      return;
+    }
 
     const translated = [];
     const manual = [];
