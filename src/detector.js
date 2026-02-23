@@ -161,7 +161,7 @@ export function detectIntents(keymaps = []) {
       category,
       opts: {
         silent: keymap.silent ?? false,
-        noremap: keymap.noremap ?? true,
+        noremap: keymap.noremap ?? false,
         buffer: keymap.buffer ?? false,
         nowait: keymap.nowait ?? false,
         expr: keymap.expr ?? false,

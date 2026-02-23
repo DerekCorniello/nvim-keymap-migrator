@@ -59,8 +59,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
         continue;
       }
 
-      // use nnoremap for all pure vim mappings
-      const mapCmd = "nnoremap";
+      const mapCmd = pickMapCommand(mode, opts.noremap);
       const flags = [];
       if (truthy(opts.silent)) flags.push("<silent>");
       if (truthy(opts.expr)) flags.push("<expr>");
@@ -86,7 +85,7 @@ export function generateIdeaVimrc(keymaps = [], options = {}) {
     }
 
     const opts = readOpts(keymap);
-    const mapCmd = pickMapCommand(mode, opts.noremap);
+    const mapCmd = pickMapCommand(mode, true);
     const flags = [];
     if (truthy(opts.silent)) flags.push("<silent>");
     if (truthy(opts.expr)) flags.push("<expr>");

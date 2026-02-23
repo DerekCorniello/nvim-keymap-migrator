@@ -101,7 +101,7 @@ function getOpts(keymap) {
 
   return {
     silent: keymap?.silent,
-    noremap: keymap?.noremap ?? true,
+    noremap: keymap?.noremap ?? false,
     buffer: keymap?.buffer,
     nowait: keymap?.nowait,
     expr: keymap?.expr,
