@@ -1,6 +1,6 @@
 {
     "name": "nvim-keymap-migrator",
-    "version": "1.0.2",
+    "version": "1.1.0",
     "description": "Creates a keymap file from your Neovim config to migrate your keybinds to other editors.",
     "files": [
         "dist",
