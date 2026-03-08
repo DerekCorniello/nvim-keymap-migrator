@@ -1,0 +1,48 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": ["ESNext"],
+
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "verbatimModuleSyntax": true,
+
+        "rootDir": "src",
+        "outDir": "dist",
+
+        "strict": true,
+
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noImplicitOverride": true,
+
+        "strictNullChecks": true,
+        "strictFunctionTypes": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+
+        "exactOptionalPropertyTypes": true,
+        "noUncheckedIndexedAccess": true,
+        "noPropertyAccessFromIndexSignature": true,
+
+        "useUnknownInCatchVariables": true,
+
+        "noFallthroughCasesInSwitch": true,
+        "allowUnusedLabels": false,
+        "allowUnreachableCode": false,
+
+        "forceConsistentCasingInFileNames": true,
+
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+
+        "resolveJsonModule": true,
+
+        "skipLibCheck": false,
+
+        "declaration": true,
+        "sourceMap": true
+    },
+    "include": ["src"]
+}
