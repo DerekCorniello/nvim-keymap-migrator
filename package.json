@@ -1,41 +1,47 @@
 {
-  "name": "nvim-keymap-migrator",
-  "version": "1.0.1",
-  "description": "Creates a keymap file from your Neovim config to migrate your keybinds to other editors.",
-  "files": [
-    "index.js",
-    "src",
-    "templates",
-    "README.md",
-    "LICENSE"
-  ],
-  "bin": {
-    "nvim-keymap-migrator": "index.js"
-  },
-  "keywords": [
-    "tools",
-    "neovim",
-    "nvim",
-    "editor",
-    "ide"
-  ],
-  "homepage": "https://github.com/DerekCorniello/nvim-keymap-migrator#readme",
-  "bugs": {
-    "url": "https://github.com/DerekCorniello/nvim-keymap-migrator/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DerekCorniello/nvim-keymap-migrator.git"
-  },
-  "license": "GPL-3.0-only",
-  "author": "Derek Corniello",
-  "type": "module",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "prettier --check ."
-  },
-  "devDependencies": {
-    "prettier": "^3.0.0"
-  }
+    "name": "nvim-keymap-migrator",
+    "version": "1.0.1",
+    "description": "Creates a keymap file from your Neovim config to migrate your keybinds to other editors.",
+    "files": [
+        "dist",
+        "templates"
+    ],
+    "bin": {
+        "nvim-keymap-migrator": "./dist/index.js"
+    },
+    "keywords": [
+        "tools",
+        "neovim",
+        "nvim",
+        "editor",
+        "ide"
+    ],
+    "homepage": "https://github.com/DerekCorniello/nvim-keymap-migrator#readme",
+    "bugs": {
+        "url": "https://github.com/DerekCorniello/nvim-keymap-migrator/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/DerekCorniello/nvim-keymap-migrator.git"
+    },
+    "license": "GPL-3.0-only",
+    "author": "Derek Corniello",
+    "type": "module",
+    "main": "dist/index.js",
+    "exports": "./dist/index.js",
+    "scripts": {
+        "build": "tsc && cpy \"src/**/*.js\" dist && cpy \"src/generators/*.js\" dist/generators",
+        "prepare": "npm run build",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "prettier --check .",
+        "format": "prettier --write ."
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "devDependencies": {
+        "prettier": "^3.0.0",
+        "typescript": "^5.4.0",
+        "cpy-cli": "^3.1.1"
+    }
 }
