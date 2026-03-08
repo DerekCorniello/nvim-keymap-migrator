@@ -56,9 +56,9 @@ function _G.__nkm_cfg_emit(mode_label)
     warnings = warnings,
   }
 
-  io.write('${START_MARKER}\n')
+  io.write('${START_MARKER}\\n')
   io.write(vim.json.encode(payload))
-  io.write('\n${END_MARKER}\n')
+  io.write('\\n${END_MARKER}\\n')
   vim.cmd('qa!')
 end
 `;

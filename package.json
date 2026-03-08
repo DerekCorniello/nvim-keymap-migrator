@@ -30,7 +30,7 @@
     "main": "dist/index.js",
     "exports": "./dist/index.js",
     "scripts": {
-        "build": "tsc && cpy \"src/**/*.js\" dist && cpy \"src/generators/*.js\" dist/generators",
+        "build": "tsc",
         "prepare": "npm run build",
         "test": "echo \"Error: no test specified\" && exit 1",
         "lint": "prettier --check .",
@@ -42,6 +42,7 @@
     "devDependencies": {
         "prettier": "^3.0.0",
         "typescript": "^5.4.0",
-        "cpy-cli": "^3.1.1"
+        "cpy-cli": "^3.1.1",
+        "@types/node": "^20.0.0"
     }
 }
