@@ -7,7 +7,7 @@
         "templates"
     ],
     "bin": {
-        "nvim-keymap-migrator": "./dist/index.js"
+        "nvim-keymap-migrator": "dist/index.js"
     },
     "keywords": [
         "tools",
