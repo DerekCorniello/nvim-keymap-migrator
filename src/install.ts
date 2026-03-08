@@ -1,6 +1,6 @@
 import { access, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { ensureNamespaceDir, readMetadata, writeMetadata } from './namespace.js';
 import { MANAGED_BY_MARKER, VIM_KEYBINDING_SECTIONS } from './generators/vscode.js';
 import type {
@@ -84,14 +84,14 @@ async function readJsonFile<T>(path: string, fallback: T): Promise<T> {
 }
 
 async function ensureDirForFile(filePath: string): Promise<void> {
-    const dir = filePath.substring(0, filePath.lastIndexOf('/'));
+    const dir = dirname(filePath);
     if (dir) {
         await mkdir(dir, { recursive: true });
     }
 }
 
 async function writeJsonAtomic(path: string, data: unknown): Promise<void> {
-    const dir = path.substring(0, path.lastIndexOf('/'));
+    const dir = dirname(path);
     const tempPath = join(dir, `.nkm-temp-${Date.now()}.json`);
     await writeFile(tempPath, JSON.stringify(data, null, 2), 'utf8');
     await rename(tempPath, path);

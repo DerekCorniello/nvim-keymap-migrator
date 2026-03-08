@@ -47,7 +47,7 @@ function _G.__nkm_cfg_emit(mode_label)
   local mapleader_set = (leader ~= nil or maplocalleader ~= nil)
 
   local payload = {
-    leader = leader ~= nil and tostring(leader) or (maplocalleader ~= nil and tostring(maplocalleader) or '\\'),
+    leader = leader ~= nil and tostring(leader) or (maplocalleader ~= nil and tostring(maplocalleader) or '\\\\'),
     mapleader_set = mapleader_set,
     maplocalleader = maplocalleader ~= nil and tostring(maplocalleader) or nil,
     config_path = vim.fn.stdpath('config'),
